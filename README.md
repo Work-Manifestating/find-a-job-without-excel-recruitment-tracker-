@@ -1,5 +1,95 @@
 # Job Application Tracker
 
+A job-hunting tool for everyone.
+
+Are you tired of jumping between job boards, spreadsheets, notes, and browser tabs just to copy and paste the same job information again and again? Do tiny Excel cells make your eyes blur after a long day of applications? Did you lose access to your student account after graduation and suddenly lose the tools you relied on? Have you ever received an interview invitation, tried to reopen the original job description, and discovered that the page had disappeared, leaving you pretending you still remember exactly what role and company you applied for?
+
+This tracker is built to make those problems disappear.
+
+With a small browser extension, you can save job information with one click and cut down the meaningless admin time that eats into the application process. Instead of spending energy copying links, job descriptions, company names, and notes into scattered files, you can focus on the parts that actually matter: understanding the role, preparing your answers, improving your materials, and following up with confidence.
+
+The tracker uses multiple backup methods so that, even if the original job posting is removed or the website becomes unavailable, you can still access the first version of the job description you saved. It stores the original URL, page title, selected JD text, Markdown backup, and HTML backup locally.
+
+Privacy is a core principle of this project. Your personal information is not uploaded anywhere. The web app and browser extension communicate through a local port on your own machine, and your job data is managed locally. Your applications, notes, resumes, reflections, and saved job descriptions stay with you.
+
+The tool is also designed for reflection, not just storage. Job hunting can feel confusing: you apply, wait, forget what happened, and lose track of whether your effort is turning into progress. This tracker includes review and analysis features, including a classic Sankey Diagram for funnel conversion and a GitHub-style application heatmap that shows your daily application activity. Together, they help you understand both your effort and your outcomes.
+
+## What It Helps With
+
+- Save job descriptions from the browser with one click.
+- Keep job information, application status, deadlines, notes, and timelines in one local dashboard.
+- Preserve job descriptions even after the original posting disappears.
+- Track stages such as saved, applied, assessment, interview, offer, rejection, and archive.
+- Review your application funnel with a Sankey Diagram.
+- Review your daily effort with a GitHub-style heatmap.
+- Keep weekly reflections and daily review notes.
+- Prepare reusable application answers, interview stories, company notes, and resume profiles.
+- Keep your private job search data local.
+
+## How To Use This Tool
+
+### 1. Start The Local Web App
+
+From the project folder, run:
+
+```bash
+python3 server.py
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8765
+```
+
+This opens the local dashboard where you can manage your job search.
+
+### 2. Install The Chrome Extension
+
+1. Open `chrome://extensions/`.
+2. Turn on `Developer mode`.
+3. Click `Load unpacked`.
+4. Select the `extension/` folder in this project.
+
+After installation, the extension can save job pages into your local tracker.
+
+### 3. Save A Job Posting
+
+1. Open a job description page in Chrome.
+2. Select the main job description text if possible.
+3. Click the `Job Tracker Capture` extension button.
+4. Check or edit the company name and role name.
+5. Save the job.
+
+The tracker will save the job URL, page title, selected JD text, full HTML backup, and job metadata to your local dashboard.
+
+### 4. Manage Your Applications
+
+Use the `Applications` page to update each job's stage, sub-status, next action, deadline, and timeline. You can track whether a role is still saved, already applied, in assessment, in interview, rejected, offered, or archived.
+
+### 5. Prepare For Applications And Interviews
+
+Use the preparation modules to organize reusable material:
+
+- Application question answers.
+- STAR interview stories.
+- Company research notes.
+- Resume profiles for different role types.
+
+### 6. Review Your Progress
+
+Use `Funnel Analysis` to see your application conversion through a Sankey Diagram.
+
+Use `Weekly Review` to see your application heatmap, identify patterns, and write reflections about what happened this week and what to focus on next.
+
+### 7. Keep Your Data Local
+
+Runtime data is stored in the local `data/` folder, including the SQLite database, saved job descriptions, resume files, and local logs. The `data/` folder is ignored by Git, so your real job search data is not committed to the repository.
+
+---
+
+# Job Application Tracker
+
 一个本地优先的求职流程管理工具，用来替代散乱的 Excel、Notion 表格和浏览器收藏夹。
 
 项目目前由三部分组成：
