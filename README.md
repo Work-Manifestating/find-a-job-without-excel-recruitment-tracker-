@@ -13,6 +13,10 @@ The tracker uses multiple backup methods so that, even if the original job posti
 Privacy is a core principle of this project. Your personal information is not uploaded anywhere. The web app and browser extension communicate through a local port on your own machine, and your job data is managed locally. Your applications, notes, resumes, reflections, and saved job descriptions stay with you.
 
 The tool is also designed for reflection, not just storage. Job hunting can feel confusing: you apply, wait, forget what happened, and lose track of whether your effort is turning into progress. This tracker includes review and analysis features, including a classic Sankey Diagram for funnel conversion and a GitHub-style application heatmap that shows your daily application activity. Together, they help you understand both your effort and your outcomes.
+<img width="887" height="371" alt="image" src="https://github.com/user-attachments/assets/c5781773-6bcd-4090-97f9-b2a666d67e0b" />
+
+<img width="878" height="902" alt="image" src="https://github.com/user-attachments/assets/d044112b-fceb-4f56-a44f-ebf30d097ca1" />
+
 
 ## What It Helps With
 
