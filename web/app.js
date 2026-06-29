@@ -1,6 +1,18 @@
-const NAV_FILTERS = ["ALL", "ACTION_NEEDED", "PART_TIME", "FULL_TIME", "INTERNSHIP", "REJECTED", "ARCHIVED"];
 const JOB_TYPE_OPTIONS = ["PART_TIME", "FULL_TIME", "INTERNSHIP"];
-const STAGE_OPTIONS = ["SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW"];
+const COMPANY_CATEGORY_OPTIONS = [
+  "", "IB_FRONT_OFFICE", "IB_MIDDLE_BACK_OFFICE", "INSURANCE", "PEVC",
+  "STARTUP", "BIG_FOUR", "CONSULTING", "CORPORATE", "TECH", "OTHER",
+];
+const COMMUTE_REQUIREMENT_OPTIONS = ["", "ONSITE", "HYBRID", "REMOTE", "FLEXIBLE", "RELOCATION", "OTHER"];
+const VISA_SPONSORSHIP_OPTIONS = ["", "YES", "NO", "UNCLEAR", "CASE_BY_CASE"];
+const ROTATION_PREFERENCE_OPTIONS = ["", "NONE", "OPTIONAL", "REQUIRED", "RANKED_CHOICES", "UNKNOWN"];
+const APPLICATION_LIMIT_OPTIONS = ["", "NO_LIMIT", "ONE_ROLE", "LIMITED_ROLES", "ONE_PROGRAM", "UNKNOWN"];
+const DUPLICATE_CHECK_OPTIONS = ["", "YES", "NO", "UNCLEAR"];
+const INTERVIEW_PROCESS_OPTIONS = [
+  "", "UNKNOWN", "HR_PHONE", "OA_VI", "ONE_ROUND", "TWO_ROUNDS",
+  "THREE_ROUNDS", "ASSESSMENT_CENTER", "CASE_INTERVIEW", "FINAL_ONLY",
+];
+const STAGE_OPTIONS = ["SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW", "ARCHIVED"];
 const NEXT_ACTION_OPTIONS = ["DECIDE", "APPLY", "WAIT", "FOLLOW_UP", "PREPARE", "COMPLETE_TASK", "ARCHIVE"];
 const MODULE_VIEWS = {
   WEEKLY_REVIEW: {
@@ -104,25 +116,27 @@ const MODULE_TITLE_KEYS = {
 };
 
 const SUBSTATUS_BY_STAGE = {
-  SAVED: [],
-  APPLIED: ["APPLIED_SUCCESS", "APPLIED_REJECTED"],
+  SAVED: ["SAVED", "SAVED_TO_APPLIED", "SAVED_NOT_APPLY"],
+  APPLIED: ["APPLIED_SUCCESS", "APPLIED_STALE", "APPLIED_REJECTED"],
   ASSESSMENT: [
-    "ASSESSMENT_PENDING",
-    "OA",
-    "VI",
-    "TECH_TEST",
+    "ASSESSMENT_INVITED",
     "ASSESSMENT_COMPLETED",
+    "ASSESSMENT_NEXT_ROUND",
     "ASSESSMENT_REJECTED",
   ],
   INTERVIEW: [
-    "INTERVIEW_1",
-    "INTERVIEW_2",
-    "INTERVIEW_FINAL",
+    "INTERVIEW_INVITED",
     "INTERVIEW_COMPLETED",
+    "INTERVIEW_NEXT_ROUND",
+    "INTERVIEW_FINAL",
     "INTERVIEW_REJECTED",
+    "OFFER",
   ],
+  ARCHIVED: ["ARCHIVED"],
 };
 const CUSTOM_STATUS_VALUE = "__CUSTOM__";
+const DEADLINE_MANUAL_VALUE = "__MANUAL_DEADLINE__";
+const DEADLINE_ROLLING_VALUE = "roling base";
 
 const I18N = {
   zh: {
@@ -189,11 +203,17 @@ const I18N = {
     refresh: "刷新",
     tableApplyTime: "记录时间",
     tablePosition: "岗位名字",
+    tableCompanyCategory: "公司类型",
     tableType: "分类",
     tableStage: "阶段",
     tableStatus: "子状态",
     tableTimeline: "时间线",
     tableNextAction: "下一步",
+    tableDeadline: "Deadline",
+    deadlineEmpty: "选择 Deadline",
+    deadlineManual: "手动输入日/月/年",
+    deadlineRolling: "roling base",
+    deadlineDatePrompt: "请输入 deadline（日/月/年）",
     tableUpdated: "更新",
     tableActions: "操作",
     emptyJobs: "还没有岗位，先新增一条。",
@@ -212,9 +232,20 @@ const I18N = {
     openJdTitle: "打开 JD",
     company: "公司",
     position: "岗位",
+    companyCategory: "公司类型",
+    department: "部门",
+    officeLocation: "办公地区",
+    commuteRequirement: "通勤要求",
     sourceUrl: "JD 页面 URL",
     applyUrl: "投递入口 URL",
     applyTime: "投递时间",
+    visaSponsorship: "是否给签证",
+    salaryRange: "薪资范围",
+    rotationPreference: "Rotation 志愿",
+    applicationLimit: "投递数量限制",
+    duplicateCheck: "是否查并号",
+    interviewProcess: "面试流程",
+    requirements: "Requirement",
     nextAction: "下一步",
     jobType: "分类",
     stage: "阶段",
@@ -282,7 +313,17 @@ const I18N = {
     sankeyAssessment: "笔试",
     sankeyInterview: "面试",
     sankeyRejected: "被拒",
+    sankeyAppliedActive: "投递中",
+    sankeyAssessmentActive: "笔试中",
+    sankeyInterviewActive: "面试中",
+    sankeyRejectedAfterApplied: "投递被拒",
+    sankeyRejectedAfterAssessment: "笔试被拒",
+    sankeyRejectedAfterInterview: "面试被拒",
     weeklyReviewPeriod: "本周动态（过去 7 天）",
+    applicationHeatmap: "投递热力图",
+    applicationHeatmapHint: "从最早投递日期到今天，滚动查看不同月份。",
+    applicationHeatmapEmpty: "还没有投递日期记录。",
+    applicationsCount: "{count} 个投递",
     newThisWeek: "本周新增岗位",
     recentTimeline: "本周进展",
     staleApps: "需要跟进",
@@ -455,11 +496,17 @@ const I18N = {
     refresh: "Refresh",
     tableApplyTime: "Date",
     tablePosition: "Role",
+    tableCompanyCategory: "Company type",
     tableType: "Type",
     tableStage: "Stage",
     tableStatus: "Status",
     tableTimeline: "Timeline",
     tableNextAction: "Next action",
+    tableDeadline: "Deadline",
+    deadlineEmpty: "Choose deadline",
+    deadlineManual: "Enter date manually",
+    deadlineRolling: "roling base",
+    deadlineDatePrompt: "Enter deadline (day/month/year)",
     tableUpdated: "Updated",
     tableActions: "Actions",
     emptyJobs: "No applications yet. Add the first one.",
@@ -478,9 +525,20 @@ const I18N = {
     openJdTitle: "Open JD",
     company: "Company",
     position: "Role",
+    companyCategory: "Company type",
+    department: "Department",
+    officeLocation: "Office location",
+    commuteRequirement: "Commute",
     sourceUrl: "JD page URL",
     applyUrl: "Application URL",
     applyTime: "Applied date",
+    visaSponsorship: "Visa sponsorship",
+    salaryRange: "Salary range",
+    rotationPreference: "Rotation preference",
+    applicationLimit: "Application limit",
+    duplicateCheck: "Duplicate account check",
+    interviewProcess: "Interview process",
+    requirements: "Requirements",
     nextAction: "Next action",
     jobType: "Type",
     stage: "Stage",
@@ -548,7 +606,17 @@ const I18N = {
     sankeyAssessment: "Assessment",
     sankeyInterview: "Interview",
     sankeyRejected: "Rejected",
+    sankeyAppliedActive: "Applied active",
+    sankeyAssessmentActive: "Assessment active",
+    sankeyInterviewActive: "Interview active",
+    sankeyRejectedAfterApplied: "Application rejected",
+    sankeyRejectedAfterAssessment: "Assessment rejected",
+    sankeyRejectedAfterInterview: "Interview rejected",
     weeklyReviewPeriod: "This week (past 7 days)",
+    applicationHeatmap: "Application heatmap",
+    applicationHeatmapHint: "From your first application to today. Scroll to review other months.",
+    applicationHeatmapEmpty: "No application dates recorded yet.",
+    applicationsCount: "{count} applications",
     newThisWeek: "New this week",
     recentTimeline: "Progress this week",
     staleApps: "Follow up needed",
@@ -666,20 +734,28 @@ const STATUS_LABELS = {
     PART_TIME: "兼职",
     FULL_TIME: "全职",
     INTERNSHIP: "实习",
-    SAVED: "感兴趣",
-    APPLIED_SUCCESS: "投递成功",
-    APPLIED_REJECTED: "投递阶段被拒",
-    ASSESSMENT_PENDING: "笔试未完成",
+    SAVED: "收藏中",
+    SAVED_TO_APPLIED: "评估后投递成功",
+    SAVED_NOT_APPLY: "评估后不投递",
+    APPLIED_SUCCESS: "投递成功等待回复",
+    APPLIED_STALE: "投递后长期无反应",
+    APPLIED_REJECTED: "投递阶段被拒绝",
+    ASSESSMENT_INVITED: "收到笔试通知",
+    ASSESSMENT_PENDING: "收到笔试通知",
     OA: "OA",
     VI: "VI",
     TECH_TEST: "技术笔试",
-    ASSESSMENT_COMPLETED: "笔试已完成",
-    ASSESSMENT_REJECTED: "笔试阶段被拒",
-    INTERVIEW_1: "第一次面试",
-    INTERVIEW_2: "第二次面试",
+    ASSESSMENT_COMPLETED: "完成笔试等通知",
+    ASSESSMENT_NEXT_ROUND: "进入「+1」轮笔试",
+    ASSESSMENT_REJECTED: "笔试阶段被拒绝",
+    INTERVIEW_INVITED: "收到面试通知",
+    INTERVIEW_1: "收到面试通知",
+    INTERVIEW_2: "收到面试通知",
     INTERVIEW_FINAL: "终面",
-    INTERVIEW_COMPLETED: "已面试",
-    INTERVIEW_REJECTED: "面试阶段被拒",
+    INTERVIEW_COMPLETED: "完成面试等通知",
+    INTERVIEW_NEXT_ROUND: "进入「+1」轮面试",
+    INTERVIEW_REJECTED: "面试阶段被拒绝",
+    OFFER: "Offer",
     REJECTED: "拒绝",
     ARCHIVED: "归档",
   },
@@ -689,33 +765,122 @@ const STATUS_LABELS = {
     PART_TIME: "Part time",
     FULL_TIME: "Full time",
     INTERNSHIP: "Internship",
-    SAVED: "Interested",
-    APPLIED_SUCCESS: "Applied",
+    SAVED: "Saved",
+    SAVED_TO_APPLIED: "Applied after review",
+    SAVED_NOT_APPLY: "Archived after review",
+    APPLIED_SUCCESS: "Applied, waiting",
+    APPLIED_STALE: "No response after 35 days",
     APPLIED_REJECTED: "Rejected after application",
-    ASSESSMENT_PENDING: "Assessment pending",
+    ASSESSMENT_INVITED: "Assessment invite received",
+    ASSESSMENT_PENDING: "Assessment invite received",
     OA: "OA",
     VI: "Video interview",
     TECH_TEST: "Technical test",
-    ASSESSMENT_COMPLETED: "Assessment completed",
+    ASSESSMENT_COMPLETED: "Assessment done, waiting",
+    ASSESSMENT_NEXT_ROUND: "Enter +1 assessment round",
     ASSESSMENT_REJECTED: "Rejected after assessment",
-    INTERVIEW_1: "First interview",
-    INTERVIEW_2: "Second interview",
+    INTERVIEW_INVITED: "Interview invite received",
+    INTERVIEW_1: "Interview invite received",
+    INTERVIEW_2: "Interview invite received",
     INTERVIEW_FINAL: "Final interview",
-    INTERVIEW_COMPLETED: "Interview completed",
+    INTERVIEW_COMPLETED: "Interview done, waiting",
+    INTERVIEW_NEXT_ROUND: "Enter +1 interview round",
     INTERVIEW_REJECTED: "Rejected after interview",
+    OFFER: "Offer",
     REJECTED: "Rejected",
     ARCHIVED: "Archived",
   },
 };
 
 const STAGE_LABELS = {
-  zh: { SAVED: "收藏", APPLIED: "投递", ASSESSMENT: "笔试", INTERVIEW: "面试" },
-  en: { SAVED: "Saved", APPLIED: "Applied", ASSESSMENT: "Assessment", INTERVIEW: "Interview" },
+  zh: { SAVED: "收藏", APPLIED: "投递", ASSESSMENT: "笔试", INTERVIEW: "面试", ARCHIVED: "归档" },
+  en: { SAVED: "Saved", APPLIED: "Applied", ASSESSMENT: "Assessment", INTERVIEW: "Interview", ARCHIVED: "Archived" },
 };
 
 const JOB_TYPE_LABELS = {
   zh: { PART_TIME: "兼职", FULL_TIME: "全职", INTERNSHIP: "实习" },
   en: { PART_TIME: "Part time", FULL_TIME: "Full time", INTERNSHIP: "Internship" },
+};
+
+const OPTION_LABELS = {
+  zh: {
+    "": "未选择",
+    IB_FRONT_OFFICE: "投行前台",
+    IB_MIDDLE_BACK_OFFICE: "投行中后台",
+    INSURANCE: "保险",
+    PEVC: "PE/VC",
+    STARTUP: "Startup",
+    BIG_FOUR: "四大",
+    CONSULTING: "咨询",
+    CORPORATE: "实体企业",
+    TECH: "科技公司",
+    OTHER: "其他",
+    ONSITE: "现场办公",
+    HYBRID: "Hybrid",
+    REMOTE: "Remote",
+    FLEXIBLE: "灵活",
+    RELOCATION: "需要搬家",
+    YES: "是",
+    NO: "否",
+    UNCLEAR: "未说明",
+    CASE_BY_CASE: "Case by case",
+    NONE: "无",
+    OPTIONAL: "可选",
+    REQUIRED: "必填",
+    RANKED_CHOICES: "需要排序志愿",
+    UNKNOWN: "未知",
+    NO_LIMIT: "无限制",
+    ONE_ROLE: "只能投 1 个岗位",
+    LIMITED_ROLES: "有限数量",
+    ONE_PROGRAM: "同项目限投 1 个",
+    HR_PHONE: "HR 电话",
+    OA_VI: "OA / VI",
+    ONE_ROUND: "一轮",
+    TWO_ROUNDS: "两轮",
+    THREE_ROUNDS: "三轮及以上",
+    ASSESSMENT_CENTER: "Assessment Centre",
+    CASE_INTERVIEW: "Case Interview",
+    FINAL_ONLY: "终面",
+  },
+  en: {
+    "": "Not selected",
+    IB_FRONT_OFFICE: "IB front office",
+    IB_MIDDLE_BACK_OFFICE: "IB middle/back office",
+    INSURANCE: "Insurance",
+    PEVC: "PE/VC",
+    STARTUP: "Startup",
+    BIG_FOUR: "Big Four",
+    CONSULTING: "Consulting",
+    CORPORATE: "Corporate",
+    TECH: "Tech",
+    OTHER: "Other",
+    ONSITE: "Onsite",
+    HYBRID: "Hybrid",
+    REMOTE: "Remote",
+    FLEXIBLE: "Flexible",
+    RELOCATION: "Relocation",
+    YES: "Yes",
+    NO: "No",
+    UNCLEAR: "Unclear",
+    CASE_BY_CASE: "Case by case",
+    NONE: "None",
+    OPTIONAL: "Optional",
+    REQUIRED: "Required",
+    RANKED_CHOICES: "Ranked choices",
+    UNKNOWN: "Unknown",
+    NO_LIMIT: "No limit",
+    ONE_ROLE: "One role only",
+    LIMITED_ROLES: "Limited roles",
+    ONE_PROGRAM: "One per programme",
+    HR_PHONE: "HR phone",
+    OA_VI: "OA / VI",
+    ONE_ROUND: "One round",
+    TWO_ROUNDS: "Two rounds",
+    THREE_ROUNDS: "Three+ rounds",
+    ASSESSMENT_CENTER: "Assessment centre",
+    CASE_INTERVIEW: "Case interview",
+    FINAL_ONLY: "Final only",
+  },
 };
 
 const MODULE_TEXT = {
@@ -825,21 +990,13 @@ let prepJob = null;
 let activeEditor = null; // null | { type: "question"|"story"|"company", id: number|null, data: object|null }
 let moduleViewMode = {}; // { QUESTION_BANK: "card"|"table", ... }
 let moduleSearchText = {}; // { QUESTION_BANK: "", ... }
-let activeStatus = "ALL";
 let activeView = "DASHBOARD";
 let activePrepareView = "QUESTION_BANK";
-let tableFilters = {
-  job_type: "ALL",
-  current_stage: "ALL",
-  status: "ALL",
-  next_action: "ALL",
-};
 let dashboardCalendarDate = new Date();
 let dashboardSelectedReviewDate = new Date();
 let currentLang = localStorage.getItem("jobTrackerLanguage") || "zh";
 if (!I18N[currentLang]) currentLang = "zh";
 
-const statusFilters = document.querySelector("#statusFilters");
 const jobsTable = document.querySelector("#jobsTable");
 const applicationsTableHead = document.querySelector("#applicationsView thead");
 const emptyState = document.querySelector("#emptyState");
@@ -869,6 +1026,13 @@ const moduleNavButtons = document.querySelectorAll("[data-module-view]");
 const editPersonalInfoBtn = document.querySelector("#editPersonalInfoBtn");
 const jobDialog = document.querySelector("#jobDialog");
 const jobForm = document.querySelector("#jobForm");
+const companyCategorySelect = document.querySelector("#companyCategorySelect");
+const commuteRequirementSelect = document.querySelector("#commuteRequirementSelect");
+const visaSponsorshipSelect = document.querySelector("#visaSponsorshipSelect");
+const rotationPreferenceSelect = document.querySelector("#rotationPreferenceSelect");
+const applicationLimitSelect = document.querySelector("#applicationLimitSelect");
+const duplicateCheckSelect = document.querySelector("#duplicateCheckSelect");
+const interviewProcessSelect = document.querySelector("#interviewProcessSelect");
 const jobTypeSelect = document.querySelector("#jobTypeSelect");
 const nextActionSelect = document.querySelector("#nextActionSelect");
 const stageSelect = document.querySelector("#stageSelect");
@@ -885,15 +1049,27 @@ const editForm = document.querySelector("#editForm");
 const editJobId = document.querySelector("#editJobId");
 const editCompanyName = document.querySelector("#editCompanyName");
 const editPositionName = document.querySelector("#editPositionName");
+const editCompanyCategorySelect = document.querySelector("#editCompanyCategorySelect");
+const editDepartmentName = document.querySelector("#editDepartmentName");
+const editOfficeLocation = document.querySelector("#editOfficeLocation");
+const editCommuteRequirementSelect = document.querySelector("#editCommuteRequirementSelect");
 const editSourceUrl = document.querySelector("#editSourceUrl");
 const editApplyUrl = document.querySelector("#editApplyUrl");
 const editApplyTime = document.querySelector("#editApplyTime");
+const editVisaSponsorshipSelect = document.querySelector("#editVisaSponsorshipSelect");
+const editSalaryRange = document.querySelector("#editSalaryRange");
+const editRotationPreferenceSelect = document.querySelector("#editRotationPreferenceSelect");
+const editApplicationLimitSelect = document.querySelector("#editApplicationLimitSelect");
+const editDuplicateCheckSelect = document.querySelector("#editDuplicateCheckSelect");
+const editInterviewProcessSelect = document.querySelector("#editInterviewProcessSelect");
 const editJobTypeSelect = document.querySelector("#editJobTypeSelect");
 const editNextActionSelect = document.querySelector("#editNextActionSelect");
 const editStageSelect = document.querySelector("#editStageSelect");
 const editSubStatusSelect = document.querySelector("#editSubStatusSelect");
 const editCustomSubStatusField = document.querySelector("#editCustomSubStatusField");
 const editCustomSubStatusInput = document.querySelector("#editCustomSubStatusInput");
+const editRequirements = document.querySelector("#editRequirements");
+const editNotes = document.querySelector("#editNotes");
 const timelineDialog = document.querySelector("#timelineDialog");
 const timelineDialogTitle = document.querySelector("#timelineDialogTitle");
 const timelineDialogMeta = document.querySelector("#timelineDialogMeta");
@@ -947,8 +1123,45 @@ function stageLabel(stage) {
   return STAGE_LABELS[currentLang][stage] || stage;
 }
 
+function roundOrdinal(round) {
+  const value = Math.max(Number(round || 1), 1);
+  if (currentLang === "en") {
+    const suffix = value === 1 ? "st" : value === 2 ? "nd" : value === 3 ? "rd" : "th";
+    return `${value}${suffix}`;
+  }
+  const zhNums = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+  return zhNums[value] || String(value);
+}
+
+function stageLabelForJob(job) {
+  if (job.current_stage === "ASSESSMENT") {
+    return currentLang === "zh"
+      ? `第${roundOrdinal(job.assessment_round)}轮笔试`
+      : `${roundOrdinal(job.assessment_round)} assessment`;
+  }
+  if (job.current_stage === "INTERVIEW") {
+    if (job.status === "INTERVIEW_FINAL") return statusLabel("INTERVIEW_FINAL");
+    return currentLang === "zh"
+      ? `第${roundOrdinal(job.interview_round)}轮面试`
+      : `${roundOrdinal(job.interview_round)} interview`;
+  }
+  return stageLabel(job.current_stage);
+}
+
 function jobTypeLabel(jobType) {
   return JOB_TYPE_LABELS[currentLang][jobType] || jobType || "Full time";
+}
+
+function optionLabel(value) {
+  return OPTION_LABELS[currentLang][value] || value || OPTION_LABELS[currentLang][""];
+}
+
+function jobMetaText(job) {
+  return [
+    job.company_name,
+    job.company_category ? optionLabel(job.company_category) : "",
+    job.job_type ? jobTypeLabel(job.job_type) : "",
+  ].filter(Boolean).join(" · ");
 }
 
 function nextActionLabel(action) {
@@ -980,83 +1193,84 @@ function isRejected(job) {
 }
 
 function isArchived(job) {
-  return job.next_action === "ARCHIVE";
+  return job.current_stage === "ARCHIVED" || job.status === "ARCHIVED";
 }
 
 function needsAction(job) {
   return ["DECIDE", "APPLY", "FOLLOW_UP", "PREPARE", "COMPLETE_TASK"].includes(job.next_action);
 }
 
-function matchesNavFilter(job, filter) {
-  if (filter === "ALL") return !isArchived(job);
-  if (filter === "ACTION_NEEDED") return !isArchived(job) && needsAction(job);
-  if (filter === "ARCHIVED") return isArchived(job);
-  if (filter === "REJECTED") return isRejected(job);
-  return !isArchived(job) && job.job_type === filter;
+function stageForStatusValue(status, fallbackStage = "SAVED") {
+  if (status === "SAVED_TO_APPLIED") return "APPLIED";
+  if (status === "SAVED_NOT_APPLY" || status === "ARCHIVED") return "ARCHIVED";
+  if (["APPLIED_SUCCESS", "APPLIED_STALE", "APPLIED_REJECTED"].includes(status)) return "APPLIED";
+  if ([
+    "ASSESSMENT_INVITED", "ASSESSMENT_PENDING", "OA", "VI", "TECH_TEST",
+    "ASSESSMENT_COMPLETED", "ASSESSMENT_NEXT_ROUND", "ASSESSMENT_REJECTED",
+  ].includes(status)) return "ASSESSMENT";
+  if ([
+    "INTERVIEW_INVITED", "INTERVIEW_1", "INTERVIEW_2", "INTERVIEW_COMPLETED",
+    "INTERVIEW_NEXT_ROUND", "INTERVIEW_FINAL", "INTERVIEW_REJECTED", "OFFER",
+  ].includes(status)) return "INTERVIEW";
+  return fallbackStage;
 }
 
-function matchesTableFilters(job) {
-  return Object.entries(tableFilters).every(([key, value]) => value === "ALL" || String(job[key] || "") === value);
+function canonicalStatusForDisplay(status) {
+  if (["ASSESSMENT_PENDING", "OA", "VI", "TECH_TEST"].includes(status)) return "ASSESSMENT_INVITED";
+  if (["INTERVIEW_1", "INTERVIEW_2"].includes(status)) return "INTERVIEW_INVITED";
+  return status;
 }
 
-function filterSelectHtml(key, options, labelFn) {
+function resolvedStageStatus(stage, status) {
+  if (status === "SAVED_TO_APPLIED") return { stage: "APPLIED", status: "APPLIED_SUCCESS" };
+  if (status === "SAVED_NOT_APPLY") return { stage: "ARCHIVED", status: "ARCHIVED" };
+  return { stage: stageForStatusValue(status, stage), status };
+}
+
+function nextRoundPayload(job, status, resolved) {
+  const payload = { status: resolved.status, current_stage: resolved.stage };
+  if (status === "ASSESSMENT_NEXT_ROUND") {
+    payload.assessment_round = Math.max(Number(job.assessment_round || 1) + 1, 2);
+  }
+  if (status === "INTERVIEW_NEXT_ROUND") {
+    payload.interview_round = Math.max(Number(job.interview_round || 1) + 1, 2);
+  }
+  if (status === "INTERVIEW_FINAL" && job.status !== "INTERVIEW_FINAL") {
+    payload.interview_round = Number(job.interview_round || 1) + 1;
+  }
+  return payload;
+}
+
+function deadlineMode(deadline) {
+  return String(deadline || "").trim().toLowerCase() === DEADLINE_ROLLING_VALUE
+    ? DEADLINE_ROLLING_VALUE
+    : DEADLINE_MANUAL_VALUE;
+}
+
+function deadlineSelectHtml(job) {
+  const selected = deadlineMode(job.deadline);
+  const manualDeadline = job.deadline && selected === DEADLINE_MANUAL_VALUE ? job.deadline : "";
   return `
-    <select class="table-head-filter" data-table-filter="${key}" aria-label="${t("filterPlaceholder")}">
-      <option value="ALL">${t("allFilter")}</option>
-      ${options.map((value) => `
-        <option value="${escapeHtml(value)}" ${tableFilters[key] === value ? "selected" : ""}>${escapeHtml(labelFn(value))}</option>
-      `).join("")}
+    <select class="inline-deadline" data-action="deadline" data-id="${job.id}">
+      ${job.deadline ? "" : `<option value="" selected>${t("deadlineEmpty")}</option>`}
+      ${manualDeadline ? `<option value="${escapeHtml(manualDeadline)}" selected>${escapeHtml(manualDeadline)}</option>` : ""}
+      <option value="${DEADLINE_MANUAL_VALUE}" ${job.deadline && !manualDeadline && selected === DEADLINE_MANUAL_VALUE ? "selected" : ""}>${t("deadlineManual")}</option>
+      <option value="${DEADLINE_ROLLING_VALUE}" ${selected === DEADLINE_ROLLING_VALUE ? "selected" : ""}>${t("deadlineRolling")}</option>
     </select>
   `;
 }
 
 function renderApplicationTableHead() {
-  const statusOptions = Array.from(new Set(allJobs.map((job) => job.status).filter(Boolean)));
   applicationsTableHead.innerHTML = `
     <tr>
-      <th>
-        <span>${t("tablePosition")}</span>
-        ${filterSelectHtml("job_type", JOB_TYPE_OPTIONS, jobTypeLabel)}
-      </th>
-      <th>
-        <span>${t("tableStage")}</span>
-        <div class="table-head-filter-stack">
-          ${filterSelectHtml("current_stage", STAGE_OPTIONS, stageLabel)}
-          ${filterSelectHtml("status", statusOptions, statusLabel)}
-        </div>
-      </th>
-      <th>
-        <span>${t("tableNextAction")}</span>
-        ${filterSelectHtml("next_action", NEXT_ACTION_OPTIONS, nextActionLabel)}
-      </th>
-      <th>
-        <span>${t("tableUpdated")}</span>
-        <button type="button" class="table-filter-reset" data-reset-table-filters>${t("resetFilters")}</button>
-      </th>
+      <th><span>${t("tablePosition")}</span></th>
+      <th><span>${t("tableStage")}</span></th>
+      <th><span>${t("tableNextAction")}</span></th>
+      <th><span>${t("tableDeadline")}</span></th>
+      <th><span>${t("tableUpdated")}</span></th>
       <th><span>${t("tableActions")}</span></th>
     </tr>
   `;
-
-  applicationsTableHead.querySelectorAll("[data-table-filter]").forEach((select) => {
-    select.addEventListener("change", () => {
-      tableFilters[select.dataset.tableFilter] = select.value;
-      jobs = allJobs.filter((job) => matchesNavFilter(job, activeStatus)).filter(matchesTableFilters);
-      renderApplicationTableHead();
-      renderJobs();
-    });
-  });
-
-  applicationsTableHead.querySelector("[data-reset-table-filters]")?.addEventListener("click", () => {
-    tableFilters = {
-      job_type: "ALL",
-      current_stage: "ALL",
-      status: "ALL",
-      next_action: "ALL",
-    };
-    jobs = allJobs.filter((job) => matchesNavFilter(job, activeStatus));
-    renderApplicationTableHead();
-    renderJobs();
-  });
 }
 
 function formatDate(value) {
@@ -1121,10 +1335,6 @@ function updateStaticText() {
   document.querySelector('[data-nav-label="prepare"]').textContent = t("navPrepare");
   document.querySelector('[data-nav-label="review"]').textContent = t("navReview");
   document.querySelector('[data-nav-label="automation"]').textContent = t("navAutomation");
-  const navLabels = document.querySelectorAll(".nav-section summary span");
-  [t("navFilters")].forEach((label, index) => {
-    if (navLabels[index]) navLabels[index].textContent = label;
-  });
   summaryNavButton.textContent = t("summarize");
   const moduleButtonLabels = {
     WEEKLY_REVIEW: t("weeklyReview"),
@@ -1204,6 +1414,34 @@ function updateStaticText() {
   ].forEach(([selector, key]) => setLeadingLabelText(selector, I18N[currentLang][key] || key));
 
   [
+    ["company_name", "company"],
+    ["position_name", "position"],
+    ["company_category", "companyCategory"],
+    ["department_name", "department"],
+    ["office_location", "officeLocation"],
+    ["commute_requirement", "commuteRequirement"],
+    ["source_url", "sourceUrl"],
+    ["apply_url", "applyUrl"],
+    ["apply_time", "applyTime"],
+    ["visa_sponsorship", "visaSponsorship"],
+    ["salary_range", "salaryRange"],
+    ["rotation_preference", "rotationPreference"],
+    ["application_limit", "applicationLimit"],
+    ["duplicate_check", "duplicateCheck"],
+    ["interview_process", "interviewProcess"],
+    ["job_type", "jobType"],
+    ["current_stage", "stage"],
+    ["next_action", "nextAction"],
+    ["status", "subStatus"],
+    ["requirements", "requirements"],
+    ["jd_content", "jdContent"],
+    ["notes", "notes"],
+  ].forEach(([fieldName, key]) => {
+    setFieldLabel("#jobForm", fieldName, t(key));
+    setFieldLabel("#editForm", fieldName, t(key));
+  });
+
+  [
     ["#profileForm", "email", t("email")],
     ["#profileForm", "linkedin", "LinkedIn"],
     ["#profileForm", "github", "GitHub"],
@@ -1277,26 +1515,10 @@ function mergedAutofillFields(profile) {
 }
 
 function renderStatusControls() {
-  statusFilters.innerHTML = NAV_FILTERS.map((status) => {
-    const count = allJobs.filter((job) => matchesNavFilter(job, status)).length;
-    return `
-      <button class="status-filter ${activeView === "APPLICATIONS" && activeStatus === status ? "active" : ""}" data-status="${status}">
-        <span>${statusLabel(status)}</span>
-        <span>${count}</span>
-      </button>
-    `;
-  }).join("");
-
-  statusFilters.querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeStatus = button.dataset.status;
-      activeView = "APPLICATIONS";
-      loadJobs();
-    });
-  });
-
   renderStageSelect(stageSelect, "SAVED");
   renderJobTypeSelect(jobTypeSelect, "FULL_TIME");
+  renderTrackingSelects();
+  nextActionSelect.innerHTML = nextActionOptions("DECIDE");
   renderSubStatusSelect(subStatusSelect, "SAVED", "SAVED");
   syncApplicationFieldsForStage("SAVED", jobForm.elements.apply_time, subStatusSelect);
 }
@@ -1313,6 +1535,34 @@ function renderJobTypeSelect(select, value = "FULL_TIME") {
   )).join("");
 }
 
+function renderOptionalSelect(select, options, value = "") {
+  if (!select) return;
+  select.innerHTML = options.map((option) => (
+    `<option value="${escapeHtml(option)}" ${value === option ? "selected" : ""}>${escapeHtml(optionLabel(option))}</option>`
+  )).join("");
+}
+
+function renderTrackingSelects(prefix = "", job = {}) {
+  const get = (key) => job[key] || "";
+  if (prefix === "edit") {
+    renderOptionalSelect(editCompanyCategorySelect, COMPANY_CATEGORY_OPTIONS, get("company_category"));
+    renderOptionalSelect(editCommuteRequirementSelect, COMMUTE_REQUIREMENT_OPTIONS, get("commute_requirement"));
+    renderOptionalSelect(editVisaSponsorshipSelect, VISA_SPONSORSHIP_OPTIONS, get("visa_sponsorship"));
+    renderOptionalSelect(editRotationPreferenceSelect, ROTATION_PREFERENCE_OPTIONS, get("rotation_preference"));
+    renderOptionalSelect(editApplicationLimitSelect, APPLICATION_LIMIT_OPTIONS, get("application_limit"));
+    renderOptionalSelect(editDuplicateCheckSelect, DUPLICATE_CHECK_OPTIONS, get("duplicate_check"));
+    renderOptionalSelect(editInterviewProcessSelect, INTERVIEW_PROCESS_OPTIONS, get("interview_process"));
+    return;
+  }
+  renderOptionalSelect(companyCategorySelect, COMPANY_CATEGORY_OPTIONS, get("company_category"));
+  renderOptionalSelect(commuteRequirementSelect, COMMUTE_REQUIREMENT_OPTIONS, get("commute_requirement"));
+  renderOptionalSelect(visaSponsorshipSelect, VISA_SPONSORSHIP_OPTIONS, get("visa_sponsorship"));
+  renderOptionalSelect(rotationPreferenceSelect, ROTATION_PREFERENCE_OPTIONS, get("rotation_preference"));
+  renderOptionalSelect(applicationLimitSelect, APPLICATION_LIMIT_OPTIONS, get("application_limit"));
+  renderOptionalSelect(duplicateCheckSelect, DUPLICATE_CHECK_OPTIONS, get("duplicate_check"));
+  renderOptionalSelect(interviewProcessSelect, INTERVIEW_PROCESS_OPTIONS, get("interview_process"));
+}
+
 function nextActionOptions(value = "DECIDE") {
   return NEXT_ACTION_OPTIONS.map((action) => (
     `<option value="${action}" ${value === action ? "selected" : ""}>${nextActionLabel(action)}</option>`
@@ -1320,26 +1570,19 @@ function nextActionOptions(value = "DECIDE") {
 }
 
 function subStatusOptionsForStage(stage, value) {
-  if (stage === "SAVED") return "";
   const known = SUBSTATUS_BY_STAGE[stage] || [];
-  const hasCustomValue = value && !known.includes(value);
+  const selectedValue = canonicalStatusForDisplay(value);
+  const hasCustomValue = selectedValue && !known.includes(selectedValue);
   return [
     ...known.map((status) => (
-      `<option value="${status}" ${value === status ? "selected" : ""}>${statusLabel(status)}</option>`
+      `<option value="${status}" ${selectedValue === status ? "selected" : ""}>${statusLabel(status)}</option>`
     )),
-    hasCustomValue ? `<option value="${escapeHtml(value)}" selected>${escapeHtml(value)}</option>` : "",
-    `<option value="${CUSTOM_STATUS_VALUE}">${currentLang === "zh" ? "自定义..." : "Custom..."}</option>`,
+    hasCustomValue ? `<option value="${escapeHtml(selectedValue)}" selected>${escapeHtml(selectedValue)}</option>` : "",
   ].join("");
 }
 
 function renderSubStatusSelect(select, stage, value) {
   const field = select.closest("label");
-  if (stage === "SAVED") {
-    select.innerHTML = "";
-    select.disabled = true;
-    if (field) field.hidden = true;
-    return;
-  }
   select.disabled = false;
   if (field) field.hidden = false;
   const fallback = (SUBSTATUS_BY_STAGE[stage] || [])[0] || "";
@@ -1348,13 +1591,11 @@ function renderSubStatusSelect(select, stage, value) {
 
 function syncApplicationFieldsForStage(stage, applyInput, statusSelect) {
   const applyField = applyInput?.closest("label");
-  const statusField = statusSelect?.closest("label");
-  const isSaved = stage === "SAVED";
-  if (applyField) applyField.hidden = isSaved;
-  if (statusField) statusField.hidden = isSaved;
+  const isSavedOrArchived = stage === "SAVED" || stage === "ARCHIVED";
+  if (applyField) applyField.hidden = isSavedOrArchived;
   if (applyInput) {
-    applyInput.disabled = isSaved;
-    if (isSaved) applyInput.value = "";
+    applyInput.disabled = isSavedOrArchived;
+    if (isSavedOrArchived) applyInput.value = "";
   }
 }
 
@@ -1376,7 +1617,7 @@ function renderJobs() {
         <button class="job-link" data-action="jd" data-id="${job.id}">
           ${escapeHtml(job.position_name)}
         </button>
-        <div class="muted">${escapeHtml(job.company_name)} · ${jobTypeLabel(job.job_type || "FULL_TIME")}</div>
+        <div class="muted">${escapeHtml(jobMetaText(job))}</div>
       </td>
       <td>
         <select class="inline-status" data-action="stage" data-id="${job.id}">
@@ -1384,19 +1625,21 @@ function renderJobs() {
             <option value="${stage}" ${job.current_stage === stage ? "selected" : ""}>${stageLabel(stage)}</option>
           `).join("")}
         </select>
-        <div class="muted table-subtext">${statusLabel(job.status)}</div>
+        <div class="muted table-subtext">${stageLabelForJob(job)}</div>
       </td>
       <td>
-        <select class="inline-status" data-action="next-action" data-id="${job.id}">
-          ${nextActionOptions(job.next_action || "DECIDE")}
+        <select class="inline-status" data-action="substatus" data-id="${job.id}">
+          ${subStatusOptionsForStage(job.current_stage, job.status)}
         </select>
       </td>
-      <td>${escapeHtml(formatDate(job.updated_at || job.apply_time || job.created_at))}</td>
+      <td>
+        ${deadlineSelectHtml(job)}
+      </td>
+      <td><div class="table-date">${escapeHtml(formatDate(job.updated_at || job.apply_time || job.created_at))}</div></td>
       <td>
         <div class="operation-row">
-          ${job.current_stage === "SAVED" ? "" : `<button class="prep-action-btn" data-action="prep" data-id="${job.id}">${t("prepBtn")}</button>`}
+          ${["SAVED", "ARCHIVED"].includes(job.current_stage) ? "" : `<button class="prep-action-btn" data-action="prep" data-id="${job.id}">${t("prepBtn")}</button>`}
           <button data-action="detail" data-id="${job.id}">${t("detail")}</button>
-          <button data-action="edit" data-id="${job.id}">${t("edit")}</button>
         </div>
       </td>
     </tr>
@@ -1414,11 +1657,11 @@ function renderJobs() {
       const job = jobs.find((item) => String(item.id) === select.dataset.id);
       if (!job) return;
       const nextStage = select.value;
-      const nextStatus = nextStage === "SAVED" ? "SAVED" : (SUBSTATUS_BY_STAGE[nextStage] || [])[0] || job.status;
+      const nextStatus = (SUBSTATUS_BY_STAGE[nextStage] || [])[0] || job.status;
       await patchJobFromInline(job, {
         current_stage: nextStage,
         status: nextStatus,
-        apply_time: nextStage === "SAVED" ? "" : job.apply_time,
+        apply_time: ["SAVED", "ARCHIVED"].includes(nextStage) ? "" : job.apply_time,
       });
     });
   });
@@ -1428,14 +1671,6 @@ function renderJobs() {
       const job = jobs.find((item) => String(item.id) === select.dataset.id);
       if (!job) return;
       await patchJobFromInline(job, { job_type: select.value });
-    });
-  });
-
-  jobsTable.querySelectorAll("[data-action='next-action']").forEach((select) => {
-    select.addEventListener("change", async () => {
-      const job = jobs.find((item) => String(item.id) === select.dataset.id);
-      if (!job) return;
-      await patchJobFromInline(job, { next_action: select.value });
     });
   });
 
@@ -1452,7 +1687,27 @@ function renderJobs() {
         }
         nextStatus = nextStatus.trim();
       }
-      await patchJobFromInline(job, { status: nextStatus });
+      const resolved = resolvedStageStatus(job.current_stage, nextStatus);
+      await patchJobFromInline(job, nextRoundPayload(job, nextStatus, resolved));
+    });
+  });
+
+  jobsTable.querySelectorAll("[data-action='deadline']").forEach((select) => {
+    select.addEventListener("change", async () => {
+      const job = jobs.find((item) => String(item.id) === select.dataset.id);
+      if (!job) return;
+      let nextDeadline = select.value;
+      if (!nextDeadline) return;
+      if (nextDeadline === DEADLINE_MANUAL_VALUE) {
+        const value = window.prompt(t("deadlineDatePrompt"), deadlineMode(job.deadline) === DEADLINE_MANUAL_VALUE ? job.deadline || "" : "");
+        if (!value || !value.trim()) {
+          select.value = job.deadline || "";
+          return;
+        }
+        nextDeadline = value.trim();
+      }
+      if (nextDeadline === (job.deadline || "")) return;
+      await patchJobFromInline(job, { deadline: nextDeadline });
     });
   });
 
@@ -1470,30 +1725,6 @@ function renderJobs() {
     button.addEventListener("click", async () => {
       const job = jobs.find((item) => String(item.id) === button.dataset.id);
       if (job) await renderJobDetailDialog(job);
-    });
-  });
-
-  jobsTable.querySelectorAll("[data-action='edit']").forEach((button) => {
-    button.addEventListener("click", () => {
-      const job = jobs.find((item) => String(item.id) === button.dataset.id);
-      if (job) openEditDialogForJob(job);
-    });
-  });
-
-  jobsTable.querySelectorAll("[data-action='delete']").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const job = jobs.find((item) => String(item.id) === button.dataset.id);
-      if (!job) return;
-      const ok = window.confirm(
-        t("deleteJobConfirm", { job: `${job.company_name} - ${job.position_name}` })
-      );
-      if (!ok) return;
-      await api(`/api/jobs/${job.id}`, { method: "DELETE" });
-      if (timelineJob && timelineJob.id === job.id) {
-        timelineJob = null;
-        timelineDialog.close();
-      }
-      await loadJobs();
     });
   });
 
@@ -1574,8 +1805,8 @@ function percent(part, total) {
 function buildSummaryStats() {
   const total = allJobs.length;
   const savedTotal = allJobs.filter((job) => job.current_stage === "SAVED").length;
-  // Sankey / funnel only counts jobs that have been submitted (not just saved)
-  const appliedJobs = allJobs.filter((job) => job.current_stage !== "SAVED");
+  // Sankey / funnel only counts jobs that have been submitted (not saved or archived)
+  const appliedJobs = allJobs.filter((job) => !["SAVED", "ARCHIVED"].includes(job.current_stage));
   const appliedTotal = appliedJobs.length;
   const appliedRejectedJobs = allJobs.filter((job) => job.status === "APPLIED_REJECTED");
   const assessmentTotal = allJobs.filter((job) => (
@@ -1606,34 +1837,70 @@ function buildSummaryStats() {
   };
 }
 
-function sankeyWidth(count, total) {
-  if (!count || !total) return 0;
-  return Math.max(8, Math.round((count / total) * 48));
+function sankeyNodeHeight(count, scale) {
+  if (!count) return 0;
+  return Math.max(34, Math.round(count * scale));
 }
 
-function sankeyFlow({ from, to, count, total, color, title }) {
+function sankeyFlowWidth(count, scale) {
+  if (!count) return 0;
+  return Math.max(6, Math.round(count * scale));
+}
+
+function stackSankeyColumn(nodes, top, height, gap = 18) {
+  const visibleNodes = nodes.filter((node) => node.count > 0);
+  const totalHeight = visibleNodes.reduce((sum, node) => sum + node.height, 0) + Math.max(visibleNodes.length - 1, 0) * gap;
+  let y = top + Math.max((height - totalHeight) / 2, 0);
+  visibleNodes.forEach((node) => {
+    node.y = Math.round(y);
+    y += node.height + gap;
+  });
+}
+
+function initialiseSankeyOffsets(nodes, links) {
+  const incoming = {};
+  const outgoing = {};
+  links.forEach((link) => {
+    outgoing[link.source] = (outgoing[link.source] || 0) + link.width;
+    incoming[link.target] = (incoming[link.target] || 0) + link.width;
+  });
+
+  nodes.forEach((node) => {
+    const inHeight = incoming[node.key] || 0;
+    const outHeight = outgoing[node.key] || 0;
+    node._inY = node.y + Math.max((node.height - inHeight) / 2, 0);
+    node._outY = node.y + Math.max((node.height - outHeight) / 2, 0);
+  });
+}
+
+function sankeyFlow({ source, target, count, total, color, width, title }) {
   if (!count) return "";
-  const width = sankeyWidth(count, total);
-  const mid = (from.x + to.x) / 2;
+  const flowWidth = Math.min(source.height, target.height, width);
+  const fromY = source._outY + flowWidth / 2;
+  const toY = target._inY + flowWidth / 2;
+  source._outY += flowWidth;
+  target._inY += flowWidth;
+  const fromX = source.x + source.width;
+  const toX = target.x;
+  const mid = (fromX + toX) / 2;
+
   return `
     <path
-      class="sankey-flow"
-      d="M ${from.x} ${from.y} C ${mid} ${from.y}, ${mid} ${to.y}, ${to.x} ${to.y}"
-      stroke="${color}"
-      stroke-width="${width}"
+      class="sankey-flow ${color}"
+      d="M ${fromX} ${fromY} C ${mid} ${fromY}, ${mid} ${toY}, ${toX} ${toY}"
+      stroke-width="${flowWidth}"
     >
-      <title>${title || `${count} 个 · ${percent(count, total)}`}</title>
+      <title>${escapeHtml(title || `${count} · ${percent(count, total)}`)}</title>
     </path>
   `;
 }
 
-function sankeyNode({ x, y, title, count, total, tone = "", tooltip = "" }) {
+function sankeyNode({ x, y, width, height, title, count, total, tone = "" }) {
   return `
     <g class="sankey-node ${tone}" transform="translate(${x}, ${y})">
-      ${tooltip ? `<title>${escapeHtml(tooltip)}</title>` : ""}
-      <rect width="126" height="58" rx="8"></rect>
-      <text x="12" y="22">${title}</text>
-      <text x="12" y="45" class="node-count">${count} · ${percent(count, total)}</text>
+      <rect width="${width}" height="${height}" rx="6"></rect>
+      <text x="12" y="20">${escapeHtml(title)}</text>
+      <text x="12" y="42" class="node-count">${count} · ${percent(count, total)}</text>
     </g>
   `;
 }
@@ -1643,57 +1910,65 @@ function renderSankey(stats) {
   if (total === 0) {
     return `<div class="sankey-card sankey-empty"><p class="muted">投递过的岗位将在这里显示漏斗图。</p></div>`;
   }
-  const rejectedTotal = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
-  const stageNodes = [
-    { key: "root", title: t("sankeyRoot"), count: total, x: 80, y: 140 },
+  const appliedActive = Math.max(total - stats.assessmentTotal - stats.appliedRejected, 0);
+  const assessmentActive = Math.max(stats.assessmentTotal - stats.interviewTotal - stats.assessmentRejected, 0);
+  const interviewActive = Math.max(stats.interviewTotal - stats.interviewRejected, 0);
+  const scale = 260 / total;
+  const nodeWidth = 136;
+  const diagram = { width: 900, height: 430, top: 28, bodyHeight: 350 };
+  const nodes = [
+    { key: "root", title: t("sankeyRoot"), count: total, x: 34, tone: "root" },
+    { key: "assessment", title: t("sankeyAssessment"), count: stats.assessmentTotal, x: 258, tone: "stage" },
+    { key: "appliedActive", title: t("sankeyAppliedActive"), count: appliedActive, x: 258, tone: "active" },
+    { key: "appliedRejected", title: t("sankeyRejectedAfterApplied"), count: stats.appliedRejected, x: 258, tone: "rejected" },
+    { key: "interview", title: t("sankeyInterview"), count: stats.interviewTotal, x: 482, tone: "stage" },
+    { key: "assessmentActive", title: t("sankeyAssessmentActive"), count: assessmentActive, x: 482, tone: "active" },
+    { key: "assessmentRejected", title: t("sankeyRejectedAfterAssessment"), count: stats.assessmentRejected, x: 482, tone: "rejected" },
+    { key: "interviewActive", title: t("sankeyInterviewActive"), count: interviewActive, x: 706, tone: "active" },
+    { key: "interviewRejected", title: t("sankeyRejectedAfterInterview"), count: stats.interviewRejected, x: 706, tone: "rejected" },
   ];
-  if (stats.assessmentTotal > 0) {
-    stageNodes.push({ key: "assessment", title: t("sankeyAssessment"), count: stats.assessmentTotal, x: 330, y: 140 });
-  }
-  if (stats.interviewTotal > 0) {
-    stageNodes.push({ key: "interview", title: t("sankeyInterview"), count: stats.interviewTotal, x: 580, y: 140 });
-  }
+  nodes.forEach((node) => {
+    node.width = nodeWidth;
+    node.height = sankeyNodeHeight(node.count, scale);
+  });
 
-  const rejectedTooltip = [
-    stats.appliedRejected ? `${stageLabel("APPLIED")}: ${stats.appliedRejected} ${stats.rejectedBreakdown.applied.map((job) => statusLabel(job.status)).join(", ")}` : "",
-    stats.assessmentRejected ? `${stageLabel("ASSESSMENT")}: ${stats.assessmentRejected} ${stats.rejectedBreakdown.assessment.map((job) => statusLabel(job.status)).join(", ")}` : "",
-    stats.interviewRejected ? `${stageLabel("INTERVIEW")}: ${stats.interviewRejected} ${stats.rejectedBreakdown.interview.map((job) => statusLabel(job.status)).join(", ")}` : "",
-  ].filter(Boolean).join("\n");
+  stackSankeyColumn(nodes.filter((node) => node.x === 34), diagram.top, diagram.bodyHeight);
+  stackSankeyColumn(nodes.filter((node) => node.x === 258), diagram.top, diagram.bodyHeight);
+  stackSankeyColumn(nodes.filter((node) => node.x === 482), diagram.top, diagram.bodyHeight);
+  stackSankeyColumn(nodes.filter((node) => node.x === 706), diagram.top, diagram.bodyHeight);
 
-  const rejectedNode = rejectedTotal
-    ? { key: "rejected", title: t("sankeyRejected"), count: rejectedTotal, x: 330, y: 260, tooltip: rejectedTooltip }
-    : null;
-
-  const root = stageNodes[0];
-  const assessment = stageNodes.find((node) => node.key === "assessment");
-  const interview = stageNodes.find((node) => node.key === "interview");
+  const nodeMap = Object.fromEntries(nodes.map((node) => [node.key, node]));
+  const links = [
+    { source: "root", target: "assessment", count: stats.assessmentTotal, tone: "stage-flow", title: `${t("enteredAssessment")}: ${stats.assessmentTotal}` },
+    { source: "root", target: "appliedActive", count: appliedActive, tone: "active-flow", title: `${t("sankeyAppliedActive")}: ${appliedActive}` },
+    { source: "root", target: "appliedRejected", count: stats.appliedRejected, tone: "rejected-flow", title: `${t("sankeyRejectedAfterApplied")}: ${stats.appliedRejected}` },
+    { source: "assessment", target: "interview", count: stats.interviewTotal, tone: "stage-flow", title: `${t("enteredInterview")}: ${stats.interviewTotal}` },
+    { source: "assessment", target: "assessmentActive", count: assessmentActive, tone: "active-flow", title: `${t("sankeyAssessmentActive")}: ${assessmentActive}` },
+    { source: "assessment", target: "assessmentRejected", count: stats.assessmentRejected, tone: "rejected-flow", title: `${t("sankeyRejectedAfterAssessment")}: ${stats.assessmentRejected}` },
+    { source: "interview", target: "interviewActive", count: interviewActive, tone: "active-flow", title: `${t("sankeyInterviewActive")}: ${interviewActive}` },
+    { source: "interview", target: "interviewRejected", count: stats.interviewRejected, tone: "rejected-flow", title: `${t("sankeyRejectedAfterInterview")}: ${stats.interviewRejected}` },
+  ].filter((link) => link.count > 0);
+  links.forEach((link) => {
+    link.width = sankeyFlowWidth(link.count, scale);
+  });
+  initialiseSankeyOffsets(nodes, links);
 
   return `
     <div class="sankey-card">
-      <svg class="sankey-diagram" viewBox="0 0 760 360" role="img" aria-label="Application Sankey Diagram">
+      <svg class="sankey-diagram" viewBox="0 0 ${diagram.width} ${diagram.height}" role="img" aria-label="Application Sankey Diagram">
         <g class="sankey-flows">
-          ${assessment ? sankeyFlow({
-            from: { x: root.x + 126, y: root.y + 29 },
-            to: { x: assessment.x, y: assessment.y + 29 },
-            count: stats.assessmentTotal, total, color: "#ff8ba7",
-            title: `${t("enteredAssessment")}: ${stats.assessmentTotal}`,
-          }) : ""}
-          ${interview ? sankeyFlow({
-            from: { x: (assessment || root).x + 126, y: (assessment || root).y + 29 },
-            to: { x: interview.x, y: interview.y + 29 },
-            count: stats.interviewTotal, total, color: "#ff8ba7",
-            title: `${t("enteredInterview")}: ${stats.interviewTotal}`,
-          }) : ""}
-          ${rejectedNode ? sankeyFlow({
-            from: { x: root.x + 63, y: root.y + 58 },
-            to: { x: rejectedNode.x + 63, y: rejectedNode.y },
-            count: rejectedTotal, total, color: "#d94f79",
-            title: rejectedTooltip || `${t("sankeyRejected")}: ${rejectedTotal}`,
-          }) : ""}
+          ${links.map((link) => sankeyFlow({
+            source: nodeMap[link.source],
+            target: nodeMap[link.target],
+            count: link.count,
+            total,
+            color: link.tone,
+            width: link.width,
+            title: link.title,
+          })).join("")}
         </g>
 
-        ${stageNodes.map((node) => sankeyNode({ ...node, total })).join("")}
-        ${rejectedNode ? sankeyNode({ ...rejectedNode, total, tone: "rejected" }) : ""}
+        ${nodes.filter((node) => node.count > 0).map((node) => sankeyNode({ ...node, total })).join("")}
       </svg>
     </div>
   `;
@@ -1703,10 +1978,10 @@ function renderSummaryView() {
   const stats = buildSummaryStats();
   summary.textContent = t("summaryText", { total: stats.appliedTotal, active: stats.activeOrUnknown });
 
-  // Conversion rates (exclude SAVED from denominator)
-  const appliedBase = allJobs.filter((j) => j.current_stage !== "SAVED").length;
+  // Conversion rates (exclude SAVED and ARCHIVED from denominator)
+  const appliedBase = allJobs.filter((j) => !["SAVED", "ARCHIVED"].includes(j.current_stage)).length;
   const totalRejected = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
-  const gotReply = allJobs.filter((j) => j.current_stage !== "SAVED" && j.status !== "APPLIED_SUCCESS").length;
+  const gotReply = allJobs.filter((j) => !["SAVED", "ARCHIVED"].includes(j.current_stage) && j.status !== "APPLIED_SUCCESS").length;
   const pct = (n, d) => d > 0 ? `${Math.round((n / d) * 100)}%` : "—";
 
   const rateCards = [
@@ -1766,6 +2041,18 @@ function dateKey(date) {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+function dateFromKey(key) {
+  const [year, month, day] = String(key || "").split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
 }
 
 function reviewNoteKey(date) {
@@ -1834,7 +2121,7 @@ function renderActionNeededCard() {
               ${group.map((job) => `
                 <button type="button" data-dashboard-job="${job.id}">
                   <strong>${escapeHtml(job.position_name)}</strong>
-                  <span>${escapeHtml(job.company_name)} · ${stageLabel(job.current_stage)}</span>
+                  <span>${escapeHtml(job.company_name)} · ${stageLabelForJob(job)}</span>
                 </button>
               `).join("")}
             </div>
@@ -1908,8 +2195,8 @@ function renderReviewCalendar(dayData) {
             <h4>${t("dayActivity")}</h4>
             ${hasActivity ? "" : `<p class="muted">${t("noDayActivity")}</p>`}
           </div>
-          ${dailyActivitySection(t("jobsRecorded"), recordedJobs, (job) => `${stageLabel(job.current_stage)} · ${statusLabel(job.status)}`)}
-          ${dailyActivitySection(t("jobsApplied"), appliedJobs, (job) => `${stageLabel(job.current_stage)} · ${statusLabel(job.status)}`)}
+          ${dailyActivitySection(t("jobsRecorded"), recordedJobs, (job) => `${stageLabelForJob(job)} · ${statusLabel(job.status)}`)}
+          ${dailyActivitySection(t("jobsApplied"), appliedJobs, (job) => `${stageLabelForJob(job)} · ${statusLabel(job.status)}`)}
           ${dailyActivitySection(t("timelineActivity"), timelineEvents, (event) => `${event.position_name} · ${formatDate(event.event_time)}`)}
           <div class="calendar-note-editor">
             <h4>${t("dailyReflection")}</h4>
@@ -1978,7 +2265,7 @@ async function renderDashboardView() {
           ${recentJobs.length ? recentJobs.map((job) => `
             <button type="button" data-dashboard-job="${job.id}">
               <strong>${escapeHtml(job.position_name)}</strong>
-              <span>${escapeHtml(job.company_name)} · ${stageLabel(job.current_stage)} · ${statusLabel(job.status)}</span>
+              <span>${escapeHtml(job.company_name)} · ${stageLabelForJob(job)} · ${statusLabel(job.status)}</span>
             </button>
           `).join("") : `<p class="muted">${t("noRecentApplications")}</p>`}
         </div>
@@ -2077,6 +2364,126 @@ function weeklyJobRow(job, meta) {
     </div>`;
 }
 
+function applicationDateKey(job) {
+  if (["SAVED", "ARCHIVED"].includes(job.current_stage)) return "";
+  const source = job.apply_time || job.created_at || "";
+  const match = String(source).match(/^\d{4}-\d{2}-\d{2}/);
+  if (match) return match[0];
+  const parsed = new Date(source);
+  return Number.isNaN(parsed.getTime()) ? "" : dateKey(parsed);
+}
+
+function heatmapLevel(count) {
+  if (count <= 0) return "heatmap-level-0";
+  if (count <= 2) return "heatmap-level-1";
+  if (count <= 5) return "heatmap-level-2";
+  if (count <= 10) return "heatmap-level-3";
+  return "heatmap-level-4";
+}
+
+function renderApplicationHeatmap() {
+  const counts = new Map();
+  allJobs.forEach((job) => {
+    const key = applicationDateKey(job);
+    if (!key) return;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+
+  if (!counts.size) {
+    return `
+      <section class="weekly-section weekly-heatmap-section">
+        <div class="weekly-section-header">
+          <h3>${t("applicationHeatmap")}</h3>
+        </div>
+        <p class="weekly-empty">${t("applicationHeatmapEmpty")}</p>
+      </section>
+    `;
+  }
+
+  const today = new Date();
+  const todayKey = dateKey(today);
+  const earliestKey = Array.from(counts.keys()).sort()[0];
+  const earliestDate = dateFromKey(earliestKey) || today;
+  const currentMonthKey = dateKey(new Date(today.getFullYear(), today.getMonth(), 1));
+  const earliestMonth = new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1);
+  const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const previousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const startMonth = earliestMonth < previousMonth ? earliestMonth : previousMonth;
+  const endMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const weekdayLabels = currentLang === "zh"
+    ? ["日", "一", "二", "三", "四", "五", "六"]
+    : ["S", "M", "T", "W", "T", "F", "S"];
+  const months = [];
+  let currentMonthIndex = -1;
+
+  for (
+    let cursor = new Date(startMonth);
+    cursor <= endMonth;
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)
+  ) {
+    const month = new Date(cursor);
+    const monthKey = dateKey(month);
+    if (monthKey === currentMonthKey) currentMonthIndex = months.length;
+    const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < month.getDay(); i += 1) cells.push(`<span class="heatmap-day is-empty"></span>`);
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const cellDate = new Date(month.getFullYear(), month.getMonth(), day);
+      const key = dateKey(cellDate);
+      if (key > todayKey) {
+        cells.push(`
+          <span class="heatmap-day heatmap-future" title="${escapeHtml(dayTitle(cellDate))}">
+            <span>${day}</span>
+          </span>
+        `);
+        continue;
+      }
+      const count = counts.get(key) || 0;
+      const label = t("applicationsCount").replace("{count}", count);
+      const firstApplicationDot = key === earliestKey ? `<span class="heatmap-first-dot" aria-hidden="true"></span>` : "";
+      cells.push(`
+        <span class="heatmap-day ${heatmapLevel(count)}" title="${escapeHtml(`${dayTitle(cellDate)} · ${label}`)}">
+          <span>${day}</span>
+          ${firstApplicationDot}
+        </span>
+      `);
+    }
+    months.push(`
+      <article class="heatmap-month ${monthKey === currentMonthKey ? "is-current-month" : ""}">
+        <h4>${monthTitle(month)}</h4>
+        <div class="heatmap-weekdays">
+          ${weekdayLabels.map((label) => `<span>${label}</span>`).join("")}
+        </div>
+        <div class="heatmap-grid">
+          ${cells.join("")}
+        </div>
+      </article>
+    `);
+  }
+
+  if (currentMonthIndex >= 0) {
+    const columnOffset = currentMonthIndex % 3;
+    const spacersNeeded = columnOffset === 0 ? 1 : columnOffset === 2 ? 2 : 0;
+    for (let i = 0; i < spacersNeeded; i += 1) {
+      months.splice(currentMonthIndex, 0, `<span class="heatmap-month-spacer" aria-hidden="true"></span>`);
+    }
+  }
+
+  return `
+    <section class="weekly-section weekly-heatmap-section">
+      <div class="weekly-section-header">
+        <div>
+          <h3>${t("applicationHeatmap")}</h3>
+          <p class="weekly-heatmap-hint">${t("applicationHeatmapHint")}</p>
+        </div>
+      </div>
+      <div class="weekly-heatmap-scroll" id="applicationHeatmapScroll">
+        ${months.join("")}
+      </div>
+    </section>
+  `;
+}
+
 async function renderWeeklyReviewView() {
   moduleView.innerHTML = `<p class="muted" style="padding:24px">加载中…</p>`;
   let data;
@@ -2103,12 +2510,13 @@ async function renderWeeklyReviewView() {
 
   function staleList(jobs) {
     return jobs.map((job) => weeklyJobRow(job,
-      `${stageLabel(job.current_stage)} · ${t("lastUpdated")}: ${formatDate(job.updated_at)}`
+      `${stageLabelForJob(job)} · ${t("lastUpdated")}: ${formatDate(job.updated_at)}`
     )).join("");
   }
 
   moduleView.innerHTML = `
     <div class="weekly-review">
+      ${renderApplicationHeatmap()}
 
       <section class="weekly-section weekly-section-rejected">
         <div class="weekly-section-header">
@@ -2116,7 +2524,7 @@ async function renderWeeklyReviewView() {
           <span class="tag-count ${rejectedThisWeek.length > 0 ? "tag-count-bad" : ""}">${rejectedThisWeek.length}</span>
         </div>
         ${rejectedThisWeek.length ? `<div class="module-list">${rejectedThisWeek.map((job) =>
-          weeklyJobRow(job, `${stageLabel(job.current_stage)} · ${statusLabel(job.status)}`)
+          weeklyJobRow(job, `${stageLabelForJob(job)} · ${statusLabel(job.status)}`)
         ).join("")}</div>` : `<p class="weekly-empty">${t("noRejectedThisWeek")}</p>`}
       </section>
 
@@ -2158,7 +2566,7 @@ async function renderWeeklyReviewView() {
           <span class="tag-count">${newJobs.length}</span>
         </div>
         ${newJobs.length ? `<div class="module-list">${newJobs.map((job) =>
-          weeklyJobRow(job, `${stageLabel(job.current_stage)} · ${formatDate(job.created_at)}`)
+          weeklyJobRow(job, `${stageLabelForJob(job)} · ${formatDate(job.created_at)}`)
         ).join("")}</div>` : `<p class="weekly-empty">${t("noNewApps")}</p>`}
       </section>
 
@@ -2180,6 +2588,15 @@ async function renderWeeklyReviewView() {
 
     </div>
   `;
+
+  const heatmapScroll = document.querySelector("#applicationHeatmapScroll");
+  const currentHeatmapMonth = document.querySelector(".heatmap-month.is-current-month");
+  if (heatmapScroll && currentHeatmapMonth) {
+    heatmapScroll.scrollTop = Math.max(
+      currentHeatmapMonth.offsetTop - ((heatmapScroll.clientHeight - currentHeatmapMonth.offsetHeight) / 2),
+      0
+    );
+  }
 
   document.querySelector("#weeklyNotesSaveBtn").addEventListener("click", async () => {
     const text = document.querySelector("#weeklyNotesInput").value;
@@ -2634,7 +3051,7 @@ async function renderPrepDialog(target = document) {
 
   target.querySelector("#prepDialogTitle").textContent = prepJob.position_name;
   target.querySelector("#prepDialogMeta").textContent =
-    `${prepJob.company_name} · ${stageLabel(prepJob.current_stage)} · ${statusLabel(prepJob.status)}`;
+    `${prepJob.company_name} · ${stageLabelForJob(prepJob)} · ${statusLabel(prepJob.status)}`;
   target.querySelector("#prepDialogEyebrow").textContent = t("prepLabel");
 
   const totalItems = data.questions.length + data.stories.length;
@@ -3146,7 +3563,7 @@ async function loadJobs() {
   const params = new URLSearchParams();
   if (searchInput.value.trim()) params.set("q", searchInput.value.trim());
   allJobs = await api(`/api/jobs?${params.toString()}`);
-  jobs = allJobs.filter((job) => matchesNavFilter(job, activeStatus)).filter(matchesTableFilters);
+  jobs = allJobs;
   renderStatusControls();
   renderApplicationTableHead();
   renderViewShell();
@@ -3213,9 +3630,15 @@ function openEditDialogForJob(job) {
   editJobId.value = job.id;
   editCompanyName.value = job.company_name || "";
   editPositionName.value = job.position_name || "";
+  editDepartmentName.value = job.department_name || "";
+  editOfficeLocation.value = job.office_location || "";
   editSourceUrl.value = job.source_url || "";
   editApplyUrl.value = job.apply_url || "";
   editApplyTime.value = dateInputValue(job.apply_time || job.created_at);
+  editSalaryRange.value = job.salary_range || "";
+  editRequirements.value = job.requirements || "";
+  editNotes.value = job.notes || "";
+  renderTrackingSelects("edit", job);
   renderJobTypeSelect(editJobTypeSelect, job.job_type || "FULL_TIME");
   editNextActionSelect.innerHTML = nextActionOptions(job.next_action || "DECIDE");
   renderStageSelect(editStageSelect, job.current_stage || "APPLIED");
@@ -3230,7 +3653,7 @@ function openEditDialogForJob(job) {
 async function renderTimelineDialog(job) {
   const timeline = await api(`/api/jobs/${job.id}/timeline`);
   timelineDialogTitle.textContent = job.position_name;
-  timelineDialogMeta.textContent = `${job.company_name} · ${stageLabel(job.current_stage)} · ${statusLabel(job.status)}`;
+  timelineDialogMeta.textContent = `${job.company_name} · ${stageLabelForJob(job)} · ${statusLabel(job.status)}`;
   timelineList.innerHTML = timeline.length ? timeline.map((item) => `
     <div class="timeline-item">
       <p><strong>${escapeHtml(item.event_title)}</strong></p>
@@ -3240,20 +3663,55 @@ async function renderTimelineDialog(job) {
   `).join("") : `<p class="muted">${t("noTimeline")}</p>`;
 }
 
+function detailValue(value, isOption = false) {
+  if (isOption) return optionLabel(value || "");
+  return value ? escapeHtml(value) : "-";
+}
+
 async function renderJobDetailDialog(job) {
   const timeline = await api(`/api/jobs/${job.id}/timeline`);
   jobDetailTitle.textContent = job.position_name;
-  jobDetailMeta.textContent = `${job.company_name} · ${stageLabel(job.current_stage)} · ${nextActionLabel(job.next_action)}`;
+  jobDetailMeta.textContent = `${job.company_name} · ${stageLabelForJob(job)} · ${nextActionLabel(job.next_action)}`;
   jobDetailContent.innerHTML = `
     <section class="job-detail-panel">
       <h4>${t("stage")}</h4>
-      <p>${stageLabel(job.current_stage)} · ${statusLabel(job.status)}</p>
+      <p>${stageLabelForJob(job)} · ${statusLabel(job.status)}</p>
       <h4>${t("nextAction")}</h4>
       <select class="inline-status" id="jobDetailNextAction">
         ${nextActionOptions(job.next_action || "DECIDE")}
       </select>
       <h4>${t("tableUpdated")}</h4>
       <p>${formatDate(job.updated_at || job.created_at)}</p>
+    </section>
+    <section class="job-detail-panel">
+      <h4>${t("companyCategory")}</h4>
+      <p>${detailValue(job.company_category, true)}</p>
+      <h4>${t("department")}</h4>
+      <p>${detailValue(job.department_name)}</p>
+      <h4>${t("officeLocation")}</h4>
+      <p>${detailValue(job.office_location)}</p>
+      <h4>${t("commuteRequirement")}</h4>
+      <p>${detailValue(job.commute_requirement, true)}</p>
+    </section>
+    <section class="job-detail-panel">
+      <h4>${t("visaSponsorship")}</h4>
+      <p>${detailValue(job.visa_sponsorship, true)}</p>
+      <h4>${t("salaryRange")}</h4>
+      <p>${detailValue(job.salary_range)}</p>
+      <h4>${t("rotationPreference")}</h4>
+      <p>${detailValue(job.rotation_preference, true)}</p>
+      <h4>${t("applicationLimit")}</h4>
+      <p>${detailValue(job.application_limit, true)}</p>
+      <h4>${t("duplicateCheck")}</h4>
+      <p>${detailValue(job.duplicate_check, true)}</p>
+      <h4>${t("interviewProcess")}</h4>
+      <p>${detailValue(job.interview_process, true)}</p>
+    </section>
+    <section class="job-detail-panel">
+      <h4>${t("requirements")}</h4>
+      <p>${detailValue(job.requirements)}</p>
+      <h4>${t("notes")}</h4>
+      <p>${detailValue(job.notes)}</p>
     </section>
     <section class="job-detail-panel">
       <h4>${t("timeline")}</h4>
@@ -3267,7 +3725,7 @@ async function renderJobDetailDialog(job) {
     <section class="job-detail-actions">
       <button type="button" data-detail-action="timeline">${t("timeline")}</button>
       <button type="button" data-detail-action="jd">${t("openJdTitle")}</button>
-      ${job.current_stage === "SAVED" ? "" : `<button type="button" class="prep-action-btn" data-detail-action="prep">${t("prepBtn")}</button>`}
+      ${["SAVED", "ARCHIVED"].includes(job.current_stage) ? "" : `<button type="button" class="prep-action-btn" data-detail-action="prep">${t("prepBtn")}</button>`}
       <button type="button" data-detail-action="edit">${t("edit")}</button>
       <button type="button" class="danger-button" data-detail-action="delete">${t("delete")}</button>
     </section>
@@ -3333,7 +3791,13 @@ function downloadFile(filename, content, mimeType) {
 }
 
 function exportCsv() {
-  const cols = ["id", "company_name", "position_name", "job_type", "current_stage", "status", "next_action", "apply_time", "source_url", "apply_url", "updated_at"];
+  const cols = [
+    "id", "company_name", "position_name", "company_category", "department_name",
+    "office_location", "commute_requirement", "job_type", "current_stage", "status",
+    "next_action", "deadline", "apply_time", "source_url", "apply_url", "requirements",
+    "visa_sponsorship", "salary_range", "rotation_preference", "application_limit",
+    "duplicate_check", "interview_process", "notes", "updated_at",
+  ];
   const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const header = cols.join(",");
   const rows = allJobs.map((job) => cols.map((c) => escape(job[c])).join(","));
@@ -3341,8 +3805,19 @@ function exportCsv() {
 }
 
 function exportJson() {
-  const data = allJobs.map(({ id, company_name, position_name, job_type, current_stage, status, next_action, apply_time, source_url, apply_url, updated_at, created_at }) =>
-    ({ id, company_name, position_name, job_type, current_stage, status, next_action, apply_time, source_url, apply_url, updated_at, created_at }));
+  const data = allJobs.map(({
+    id, company_name, position_name, company_category, department_name,
+    office_location, commute_requirement, job_type, current_stage, status,
+    next_action, deadline, apply_time, source_url, apply_url, requirements,
+    visa_sponsorship, salary_range, rotation_preference, application_limit,
+    duplicate_check, interview_process, notes, updated_at, created_at,
+  }) => ({
+    id, company_name, position_name, company_category, department_name,
+    office_location, commute_requirement, job_type, current_stage, status,
+    next_action, deadline, apply_time, source_url, apply_url, requirements,
+    visa_sponsorship, salary_range, rotation_preference, application_limit,
+    duplicate_check, interview_process, notes, updated_at, created_at,
+  }));
   downloadFile(`job-tracker-${dateKey(new Date())}.json`, JSON.stringify(data, null, 2), "application/json");
 }
 
@@ -3433,6 +3908,12 @@ subStatusSelect.addEventListener("change", () => {
   customSubStatusField.hidden = !isCustom;
   customSubStatusInput.required = isCustom;
   if (isCustom) customSubStatusInput.focus();
+  const resolved = resolvedStageStatus(stageSelect.value, subStatusSelect.value);
+  if (resolved.stage !== stageSelect.value || resolved.status !== subStatusSelect.value) {
+    stageSelect.value = resolved.stage;
+    renderSubStatusSelect(subStatusSelect, resolved.stage, resolved.status);
+    syncApplicationFieldsForStage(resolved.stage, jobForm.elements.apply_time, subStatusSelect);
+  }
 });
 
 editStageSelect.addEventListener("change", () => {
@@ -3448,6 +3929,12 @@ editSubStatusSelect.addEventListener("change", () => {
   editCustomSubStatusField.hidden = !isCustom;
   editCustomSubStatusInput.required = isCustom;
   if (isCustom) editCustomSubStatusInput.focus();
+  const resolved = resolvedStageStatus(editStageSelect.value, editSubStatusSelect.value);
+  if (resolved.stage !== editStageSelect.value || resolved.status !== editSubStatusSelect.value) {
+    editStageSelect.value = resolved.stage;
+    renderSubStatusSelect(editSubStatusSelect, resolved.stage, resolved.status);
+    syncApplicationFieldsForStage(resolved.stage, editApplyTime, editSubStatusSelect);
+  }
 });
 
 jobForm.addEventListener("submit", async (event) => {
@@ -3463,8 +3950,11 @@ jobForm.addEventListener("submit", async (event) => {
   }
   delete payload.custom_status;
   payload.current_stage = payload.current_stage || "SAVED";
-  payload.status = payload.current_stage === "SAVED" ? "SAVED" : (payload.status || "APPLIED_SUCCESS");
-  if (payload.current_stage === "SAVED") payload.apply_time = "";
+  payload.status = payload.status || (SUBSTATUS_BY_STAGE[payload.current_stage] || [])[0] || "SAVED";
+  const resolved = resolvedStageStatus(payload.current_stage, payload.status);
+  payload.current_stage = resolved.stage;
+  payload.status = resolved.status;
+  if (["SAVED", "ARCHIVED"].includes(payload.current_stage)) payload.apply_time = "";
   payload.job_type = payload.job_type || "FULL_TIME";
   await api("/api/jobs", {
     method: "POST",
@@ -3472,6 +3962,7 @@ jobForm.addEventListener("submit", async (event) => {
   });
   jobForm.reset();
   renderJobTypeSelect(jobTypeSelect, "FULL_TIME");
+  renderTrackingSelects();
   nextActionSelect.innerHTML = nextActionOptions("DECIDE");
   renderStageSelect(stageSelect, "SAVED");
   renderSubStatusSelect(subStatusSelect, "SAVED", "SAVED");
@@ -3504,8 +3995,11 @@ editForm.addEventListener("submit", async (event) => {
   }
   delete payload.custom_status;
   payload.current_stage = payload.current_stage || "APPLIED";
-  payload.status = payload.current_stage === "SAVED" ? "SAVED" : (payload.status || "APPLIED_SUCCESS");
-  if (payload.current_stage === "SAVED") payload.apply_time = "";
+  payload.status = payload.status || (SUBSTATUS_BY_STAGE[payload.current_stage] || [])[0] || "APPLIED_SUCCESS";
+  const resolved = resolvedStageStatus(payload.current_stage, payload.status);
+  payload.current_stage = resolved.stage;
+  payload.status = resolved.status;
+  if (["SAVED", "ARCHIVED"].includes(payload.current_stage)) payload.apply_time = "";
   payload.job_type = payload.job_type || "FULL_TIME";
 
   await api(`/api/jobs/${jobId}`, {

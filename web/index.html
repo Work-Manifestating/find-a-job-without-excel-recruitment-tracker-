@@ -27,12 +27,6 @@
             <div class="nav-group">
               <p class="nav-group-label" data-nav-label="track">Track</p>
               <button class="summary-nav-button" id="applicationsNavButton">Applications</button>
-              <details class="nav-section" open>
-                <summary>
-                  <span>Filters</span>
-                </summary>
-                <nav class="status-list" id="statusFilters"></nav>
-              </details>
             </div>
             <div class="nav-group">
               <p class="nav-group-label" data-nav-label="prepare">Prepare</p>
@@ -131,6 +125,22 @@
           <input name="position_name" required />
         </label>
         <label>
+          公司类型
+          <select name="company_category" id="companyCategorySelect"></select>
+        </label>
+        <label>
+          部门
+          <input name="department_name" placeholder="例如：IBD / Risk / Product" />
+        </label>
+        <label>
+          办公地区
+          <input name="office_location" placeholder="例如：London / Canary Wharf" />
+        </label>
+        <label>
+          通勤要求
+          <select name="commute_requirement" id="commuteRequirementSelect"></select>
+        </label>
+        <label>
           JD 页面 URL
           <input name="source_url" type="url" />
         </label>
@@ -141,6 +151,30 @@
         <label>
           投递时间
           <input name="apply_time" type="date" />
+        </label>
+        <label>
+          是否给签证
+          <select name="visa_sponsorship" id="visaSponsorshipSelect"></select>
+        </label>
+        <label>
+          薪资范围
+          <input name="salary_range" placeholder="例如：£45k-£55k / Glassdoor estimate" />
+        </label>
+        <label>
+          Rotation 志愿
+          <select name="rotation_preference" id="rotationPreferenceSelect"></select>
+        </label>
+        <label>
+          投递数量限制
+          <select name="application_limit" id="applicationLimitSelect"></select>
+        </label>
+        <label>
+          是否查并号
+          <select name="duplicate_check" id="duplicateCheckSelect"></select>
+        </label>
+        <label>
+          面试流程
+          <select name="interview_process" id="interviewProcessSelect"></select>
         </label>
         <label>
           分类
@@ -163,8 +197,16 @@
           <input name="custom_status" id="customSubStatusInput" placeholder="例如：等 HR 回复" />
         </label>
         <label>
+          Requirement
+          <textarea name="requirements" rows="4" placeholder="硬性要求、技能关键词、语言/签证/学历要求"></textarea>
+        </label>
+        <label>
           JD 内容
           <textarea name="jd_content" rows="10" placeholder="先粘贴 JD 文本，后续会由 Chrome 插件自动保存。"></textarea>
+        </label>
+        <label>
+          备注
+          <textarea name="notes" rows="4" placeholder="谈薪依据、投递限制细节、后续跟进等"></textarea>
         </label>
         <footer>
           <button value="cancel">取消</button>
@@ -203,6 +245,22 @@
           <input name="position_name" id="editPositionName" required />
         </label>
         <label>
+          公司类型
+          <select name="company_category" id="editCompanyCategorySelect"></select>
+        </label>
+        <label>
+          部门
+          <input name="department_name" id="editDepartmentName" placeholder="例如：IBD / Risk / Product" />
+        </label>
+        <label>
+          办公地区
+          <input name="office_location" id="editOfficeLocation" placeholder="例如：London / Canary Wharf" />
+        </label>
+        <label>
+          通勤要求
+          <select name="commute_requirement" id="editCommuteRequirementSelect"></select>
+        </label>
+        <label>
           JD 页面 URL
           <input name="source_url" id="editSourceUrl" type="url" />
         </label>
@@ -213,6 +271,30 @@
         <label>
           投递时间
           <input name="apply_time" id="editApplyTime" type="date" />
+        </label>
+        <label>
+          是否给签证
+          <select name="visa_sponsorship" id="editVisaSponsorshipSelect"></select>
+        </label>
+        <label>
+          薪资范围
+          <input name="salary_range" id="editSalaryRange" placeholder="例如：£45k-£55k / Glassdoor estimate" />
+        </label>
+        <label>
+          Rotation 志愿
+          <select name="rotation_preference" id="editRotationPreferenceSelect"></select>
+        </label>
+        <label>
+          投递数量限制
+          <select name="application_limit" id="editApplicationLimitSelect"></select>
+        </label>
+        <label>
+          是否查并号
+          <select name="duplicate_check" id="editDuplicateCheckSelect"></select>
+        </label>
+        <label>
+          面试流程
+          <select name="interview_process" id="editInterviewProcessSelect"></select>
         </label>
         <label>
           分类
@@ -233,6 +315,14 @@
         <label id="editCustomSubStatusField" hidden>
           自定义子状态
           <input name="custom_status" id="editCustomSubStatusInput" placeholder="例如：等 HR 回复" />
+        </label>
+        <label>
+          Requirement
+          <textarea name="requirements" id="editRequirements" rows="4" placeholder="硬性要求、技能关键词、语言/签证/学历要求"></textarea>
+        </label>
+        <label>
+          备注
+          <textarea name="notes" id="editNotes" rows="4" placeholder="谈薪依据、投递限制细节、后续跟进等"></textarea>
         </label>
         <footer>
           <button value="cancel">取消</button>
