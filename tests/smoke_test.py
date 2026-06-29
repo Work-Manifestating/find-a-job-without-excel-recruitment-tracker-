@@ -48,19 +48,42 @@ def main() -> None:
                 "current_stage": "SAVED",
                 "status": "SAVED",
                 "next_action": "DECIDE",
+                "company_category": "CONSULTING",
+                "department_name": "Analytics",
+                "office_location": "London",
+                "commute_requirement": "HYBRID",
+                "requirements": "SQL and dashboarding",
+                "visa_sponsorship": "UNCLEAR",
+                "salary_range": "Glassdoor estimate",
+                "rotation_preference": "OPTIONAL",
+                "application_limit": "LIMITED_ROLES",
+                "duplicate_check": "UNCLEAR",
+                "interview_process": "TWO_ROUNDS",
+                "notes": "Track salary source",
             })
             assert job["next_action"] == "DECIDE"
+            assert job["company_category"] == "CONSULTING"
+            assert job["department_name"] == "Analytics"
+            assert job["visa_sponsorship"] == "UNCLEAR"
 
             updated = request(base, "PATCH", f"/api/jobs/{job['id']}", {"status": "OA"})
             assert updated["current_stage"] == "ASSESSMENT"
             assert updated["next_action"] == "PREPARE"
 
-            updated = request(base, "PATCH", f"/api/jobs/{job['id']}", {"next_action": "ARCHIVE"})
+            updated = request(base, "PATCH", f"/api/jobs/{job['id']}", {
+                "next_action": "ARCHIVE",
+                "company_category": "PEVC",
+                "notes": "Updated tracker note",
+            })
             assert updated["next_action"] == "ARCHIVE"
+            assert updated["company_category"] == "PEVC"
+            assert updated["notes"] == "Updated tracker note"
 
             jobs_list = request(base, "GET", "/api/jobs")
             assert isinstance(jobs_list, list) and len(jobs_list) == 1
             assert jobs_list[0]["id"] == job["id"]
+            searched_jobs = request(base, "GET", "/api/jobs?q=tracker%20note")
+            assert len(searched_jobs) == 1 and searched_jobs[0]["id"] == job["id"]
 
             # ── Timeline ─────────────────────────────────────────────────────
             timeline = request(base, "POST", f"/api/jobs/{job['id']}/timeline", {

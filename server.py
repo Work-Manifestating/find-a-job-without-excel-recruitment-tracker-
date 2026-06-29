@@ -11,7 +11,7 @@ import binascii
 import zipfile
 import zlib
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -27,7 +27,21 @@ WEB_DIR = ROOT / "web"
 
 DEFAULT_STAGE = "SAVED"
 DEFAULT_STATUS = "SAVED"
-KNOWN_STAGES = {"SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW"}
+KNOWN_STAGES = {"SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW", "ARCHIVED"}
+SAVED_TO_APPLIED_STATUS = "SAVED_TO_APPLIED"
+SAVED_NOT_APPLY_STATUS = "SAVED_NOT_APPLY"
+APPLIED_WAITING_STATUS = "APPLIED_SUCCESS"
+APPLIED_STALE_STATUS = "APPLIED_STALE"
+ASSESSMENT_INVITED_STATUS = "ASSESSMENT_INVITED"
+ASSESSMENT_COMPLETED_STATUS = "ASSESSMENT_COMPLETED"
+ASSESSMENT_NEXT_ROUND_STATUS = "ASSESSMENT_NEXT_ROUND"
+ASSESSMENT_REJECTED_STATUS = "ASSESSMENT_REJECTED"
+INTERVIEW_INVITED_STATUS = "INTERVIEW_INVITED"
+INTERVIEW_COMPLETED_STATUS = "INTERVIEW_COMPLETED"
+INTERVIEW_NEXT_ROUND_STATUS = "INTERVIEW_NEXT_ROUND"
+INTERVIEW_FINAL_STATUS = "INTERVIEW_FINAL"
+INTERVIEW_REJECTED_STATUS = "INTERVIEW_REJECTED"
+INTERVIEW_OFFER_STATUS = "OFFER"
 ALLOWED_RESUME_TYPES = {".pdf", ".docx", ".doc", ".txt"}
 DEFAULT_JOB_TYPE = "FULL_TIME"
 KNOWN_JOB_TYPES = {"PART_TIME", "FULL_TIME", "INTERNSHIP"}
@@ -60,24 +74,52 @@ def normalize_stage(value: str | None) -> str:
 
 
 def normalize_stage_status(stage: str, status: str | None) -> str:
-    if stage == "SAVED":
+    if stage == "SAVED" and status not in {SAVED_TO_APPLIED_STATUS, SAVED_NOT_APPLY_STATUS}:
         return "SAVED"
+    if stage == "ARCHIVED":
+        return status or "ARCHIVED"
     return normalize_status(status)
 
 
 def stage_for_status(status: str) -> str | None:
     if status == "SAVED":
         return "SAVED"
-    if status in {"APPLIED_SUCCESS", "APPLIED_REJECTED"}:
+    if status == SAVED_TO_APPLIED_STATUS:
         return "APPLIED"
-    if status in {"ASSESSMENT_PENDING", "OA", "VI", "TECH_TEST", "ASSESSMENT_COMPLETED", "ASSESSMENT_REJECTED"}:
+    if status == SAVED_NOT_APPLY_STATUS:
+        return "ARCHIVED"
+    if status in {"APPLIED_SUCCESS", "APPLIED_STALE", "APPLIED_REJECTED"}:
+        return "APPLIED"
+    if status in {
+        "ASSESSMENT_PENDING",
+        "OA",
+        "VI",
+        "TECH_TEST",
+        ASSESSMENT_INVITED_STATUS,
+        ASSESSMENT_COMPLETED_STATUS,
+        ASSESSMENT_NEXT_ROUND_STATUS,
+        ASSESSMENT_REJECTED_STATUS,
+    }:
         return "ASSESSMENT"
-    if status in {"INTERVIEW_1", "INTERVIEW_2", "INTERVIEW_FINAL", "INTERVIEW_COMPLETED", "INTERVIEW_REJECTED"}:
+    if status in {
+        "INTERVIEW_1",
+        "INTERVIEW_2",
+        INTERVIEW_INVITED_STATUS,
+        INTERVIEW_COMPLETED_STATUS,
+        INTERVIEW_NEXT_ROUND_STATUS,
+        INTERVIEW_FINAL_STATUS,
+        INTERVIEW_REJECTED_STATUS,
+        INTERVIEW_OFFER_STATUS,
+    }:
         return "INTERVIEW"
+    if status == "ARCHIVED":
+        return "ARCHIVED"
     return None
 
 
 def default_next_action(stage: str, status: str) -> str:
+    if stage == "ARCHIVED" or status in {SAVED_NOT_APPLY_STATUS, "ARCHIVED"}:
+        return "ARCHIVE"
     if status.endswith("_REJECTED"):
         return "ARCHIVE"
     if stage == "SAVED":
@@ -107,6 +149,14 @@ def normalize_next_action(value: str | None) -> str:
     if action not in KNOWN_NEXT_ACTIONS:
         raise ValueError("Invalid next action")
     return action
+
+
+def apply_transition_status(stage: str, status: str) -> tuple[str, str]:
+    if status == SAVED_TO_APPLIED_STATUS:
+        return "APPLIED", APPLIED_WAITING_STATUS
+    if status == SAVED_NOT_APPLY_STATUS:
+        return "ARCHIVED", "ARCHIVED"
+    return stage, status
 
 
 def utc_now() -> str:
@@ -148,12 +198,25 @@ def init_db() -> None:
                 company_name TEXT NOT NULL,
                 position_name TEXT NOT NULL,
                 job_type TEXT NOT NULL DEFAULT 'FULL_TIME',
+                company_category TEXT NOT NULL DEFAULT '',
+                department_name TEXT NOT NULL DEFAULT '',
+                office_location TEXT NOT NULL DEFAULT '',
+                commute_requirement TEXT NOT NULL DEFAULT '',
                 source_url TEXT,
                 apply_url TEXT,
+                requirements TEXT NOT NULL DEFAULT '',
+                visa_sponsorship TEXT NOT NULL DEFAULT '',
+                salary_range TEXT NOT NULL DEFAULT '',
+                rotation_preference TEXT NOT NULL DEFAULT '',
+                application_limit TEXT NOT NULL DEFAULT '',
+                duplicate_check TEXT NOT NULL DEFAULT '',
+                interview_process TEXT NOT NULL DEFAULT '',
+                notes TEXT NOT NULL DEFAULT '',
                 jd_local_path TEXT,
                 html_local_path TEXT,
                 screenshot_local_path TEXT,
                 apply_time TEXT,
+                deadline TEXT NOT NULL DEFAULT '',
                 current_stage TEXT NOT NULL DEFAULT 'SAVED',
                 status TEXT NOT NULL DEFAULT 'SAVED',
                 next_action TEXT NOT NULL DEFAULT 'DECIDE',
@@ -281,6 +344,26 @@ def init_db() -> None:
             conn.execute(
                 "ALTER TABLE job_applications ADD COLUMN next_action TEXT NOT NULL DEFAULT 'DECIDE'"
             )
+        optional_columns = {
+            "company_category": "TEXT NOT NULL DEFAULT ''",
+            "department_name": "TEXT NOT NULL DEFAULT ''",
+            "office_location": "TEXT NOT NULL DEFAULT ''",
+            "commute_requirement": "TEXT NOT NULL DEFAULT ''",
+            "requirements": "TEXT NOT NULL DEFAULT ''",
+            "visa_sponsorship": "TEXT NOT NULL DEFAULT ''",
+            "salary_range": "TEXT NOT NULL DEFAULT ''",
+            "rotation_preference": "TEXT NOT NULL DEFAULT ''",
+            "application_limit": "TEXT NOT NULL DEFAULT ''",
+            "duplicate_check": "TEXT NOT NULL DEFAULT ''",
+            "interview_process": "TEXT NOT NULL DEFAULT ''",
+            "notes": "TEXT NOT NULL DEFAULT ''",
+            "assessment_round": "INTEGER NOT NULL DEFAULT 1",
+            "interview_round": "INTEGER NOT NULL DEFAULT 1",
+            "deadline": "TEXT NOT NULL DEFAULT ''",
+        }
+        for column, definition in optional_columns.items():
+            if column not in columns:
+                conn.execute(f"ALTER TABLE job_applications ADD COLUMN {column} {definition}")
         now = utc_now()
         conn.execute(
             """
@@ -302,23 +385,87 @@ def init_db() -> None:
             UPDATE job_applications
             SET status = 'SAVED'
             WHERE current_stage = 'SAVED'
+              AND status NOT IN ('SAVED_TO_APPLIED', 'SAVED_NOT_APPLY')
             """
         )
         conn.execute(
             """
             UPDATE job_applications
-            SET status = 'OA_PENDING',
+            SET current_stage = 'ARCHIVED',
+                next_action = 'ARCHIVE'
+            WHERE status = 'SAVED_NOT_APPLY'
+            """
+        )
+        conn.execute(
+            """
+            UPDATE job_applications
+            SET status = 'ASSESSMENT_INVITED',
                 current_stage = 'ASSESSMENT'
-            WHERE status IN ('OA_PENDING', 'OA_COMPLETED')
+            WHERE status IN ('OA_PENDING', 'ASSESSMENT_PENDING', 'OA', 'VI', 'TECH_TEST')
             """
         )
         conn.execute(
             """
             UPDATE job_applications
-            SET status = 'INTERVIEW_PENDING',
-                current_stage = 'INTERVIEW'
-            WHERE status IN ('INTERVIEW', 'INTERVIEW_PENDING')
+            SET status = 'ASSESSMENT_COMPLETED',
+                current_stage = 'ASSESSMENT'
+            WHERE status = 'OA_COMPLETED'
             """
+        )
+        conn.execute(
+            """
+            UPDATE job_applications
+            SET status = 'INTERVIEW_INVITED',
+                current_stage = 'INTERVIEW'
+            WHERE status IN ('INTERVIEW', 'INTERVIEW_PENDING', 'INTERVIEW_1', 'INTERVIEW_2')
+            """
+        )
+        mark_stale_applications(conn)
+
+
+def parse_db_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        try:
+            parsed = datetime.fromisoformat(f"{text}T00:00:00+00:00")
+        except ValueError:
+            return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def mark_stale_applications(conn: sqlite3.Connection) -> None:
+    threshold = datetime.now(timezone.utc) - timedelta(days=35)
+    rows = conn.execute(
+        """
+        SELECT id, apply_time, created_at
+        FROM job_applications
+        WHERE current_stage = 'APPLIED'
+          AND status = 'APPLIED_SUCCESS'
+        """
+    ).fetchall()
+    stale_ids = []
+    for row in rows:
+        applied_at = parse_db_datetime(row["apply_time"]) or parse_db_datetime(row["created_at"])
+        if applied_at and applied_at <= threshold:
+            stale_ids.append(row["id"])
+    if stale_ids:
+        now = utc_now()
+        conn.executemany(
+            """
+            UPDATE job_applications
+            SET status = 'APPLIED_STALE',
+                updated_at = ?
+            WHERE id = ?
+            """,
+            [(now, job_id) for job_id in stale_ids],
         )
 
 
@@ -603,6 +750,8 @@ def markdown_for_job(payload: dict) -> str:
     status = normalize_status(payload.get("status"))
     source_url = payload.get("source_url", "").strip()
     apply_url = payload.get("apply_url", "").strip()
+    requirements = payload.get("requirements", "").strip()
+    notes = payload.get("notes", "").strip()
     jd_content = payload.get("jd_content", "").strip()
 
     return "\n".join(
@@ -615,6 +764,10 @@ def markdown_for_job(payload: dict) -> str:
             f"stage: {stage}",
             f"source_url: {source_url}",
             f"apply_url: {apply_url}",
+            f"company_category: {payload.get('company_category', '').strip()}",
+            f"department: {payload.get('department_name', '').strip()}",
+            f"office_location: {payload.get('office_location', '').strip()}",
+            f"visa_sponsorship: {payload.get('visa_sponsorship', '').strip()}",
             "---",
             "",
             f"# {company} - {position}",
@@ -623,6 +776,23 @@ def markdown_for_job(payload: dict) -> str:
             "",
             f"- Source: {source_url or 'N/A'}",
             f"- Apply: {apply_url or 'N/A'}",
+            "",
+            "## Tracking Notes",
+            "",
+            f"- Company type: {payload.get('company_category', '').strip() or 'N/A'}",
+            f"- Department: {payload.get('department_name', '').strip() or 'N/A'}",
+            f"- Office / commute: {payload.get('office_location', '').strip() or 'N/A'} / {payload.get('commute_requirement', '').strip() or 'N/A'}",
+            f"- Visa sponsorship: {payload.get('visa_sponsorship', '').strip() or 'N/A'}",
+            f"- Salary range: {payload.get('salary_range', '').strip() or 'N/A'}",
+            f"- Rotation preference: {payload.get('rotation_preference', '').strip() or 'N/A'}",
+            f"- Application limit: {payload.get('application_limit', '').strip() or 'N/A'}",
+            f"- Duplicate account check: {payload.get('duplicate_check', '').strip() or 'N/A'}",
+            f"- Interview process: {payload.get('interview_process', '').strip() or 'N/A'}",
+            f"- Notes: {notes or 'N/A'}",
+            "",
+            "## Requirements",
+            "",
+            requirements or "_No requirements saved yet._",
             "",
             "## Job Description",
             "",
@@ -659,7 +829,13 @@ def job_matches_search(job: dict, search: str) -> bool:
         return True
     haystack = " ".join(
         str(job.get(key) or "")
-        for key in ("company_name", "position_name", "job_type", "source_url", "apply_url")
+        for key in (
+            "company_name", "position_name", "job_type", "company_category",
+            "department_name", "office_location", "commute_requirement",
+            "source_url", "apply_url", "requirements", "visa_sponsorship",
+            "salary_range", "rotation_preference", "application_limit",
+            "duplicate_check", "interview_process", "notes",
+        )
     ).lower()
     needle = search.lower()
     if needle in haystack:
@@ -922,6 +1098,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             stage = normalize_stage(payload.get("current_stage"))
             status = normalize_stage_status(stage, payload.get("status"))
+            stage, status = apply_transition_status(stage, status)
             job_type = normalize_job_type(payload.get("job_type"))
             next_action = normalize_next_action(payload.get("next_action") or default_next_action(stage, status))
         except ValueError as error:
@@ -940,21 +1117,38 @@ class Handler(BaseHTTPRequestHandler):
             cur = conn.execute(
                 """
                 INSERT INTO job_applications (
-                    company_name, position_name, job_type, source_url, apply_url,
-                    jd_local_path, html_local_path, apply_time,
+                    company_name, position_name, job_type,
+                    company_category, department_name, office_location, commute_requirement,
+                    source_url, apply_url, requirements, visa_sponsorship, salary_range,
+                    rotation_preference, application_limit, duplicate_check,
+                    interview_process, notes,
+                    jd_local_path, html_local_path, apply_time, deadline,
                     current_stage, status, next_action, created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     company,
                     position,
                     job_type,
+                    payload.get("company_category", "").strip(),
+                    payload.get("department_name", "").strip(),
+                    payload.get("office_location", "").strip(),
+                    payload.get("commute_requirement", "").strip(),
                     payload.get("source_url", "").strip(),
                     payload.get("apply_url", "").strip(),
+                    payload.get("requirements", "").strip(),
+                    payload.get("visa_sponsorship", "").strip(),
+                    payload.get("salary_range", "").strip(),
+                    payload.get("rotation_preference", "").strip(),
+                    payload.get("application_limit", "").strip(),
+                    payload.get("duplicate_check", "").strip(),
+                    payload.get("interview_process", "").strip(),
+                    payload.get("notes", "").strip(),
                     md_path,
                     html_path,
                     "" if stage == "SAVED" else payload.get("apply_time", "").strip(),
+                    payload.get("deadline", "").strip(),
                     stage,
                     status,
                     next_action,
@@ -973,8 +1167,8 @@ class Handler(BaseHTTPRequestHandler):
                 """,
                 (
                     job_id,
-                    "SAVED" if stage == "SAVED" else "APPLIED",
-                    "岗位已收藏" if stage == "SAVED" else "岗位已投递",
+                    "SAVED" if stage == "SAVED" else "ARCHIVED" if stage == "ARCHIVED" else "APPLIED",
+                    "岗位已收藏" if stage == "SAVED" else "岗位已归档" if stage == "ARCHIVED" else "岗位已投递",
                     now,
                     "manual",
                     "",
@@ -991,12 +1185,31 @@ class Handler(BaseHTTPRequestHandler):
             "source_url",
             "apply_url",
             "apply_time",
+            "deadline",
             "job_type",
+            "company_category",
+            "department_name",
+            "office_location",
+            "commute_requirement",
+            "requirements",
+            "visa_sponsorship",
+            "salary_range",
+            "rotation_preference",
+            "application_limit",
+            "duplicate_check",
+            "interview_process",
+            "notes",
             "current_stage",
             "status",
             "next_action",
+            "assessment_round",
+            "interview_round",
         }
-        updates = {key: payload[key] for key in allowed if key in payload}
+        updates = {
+            key: str(payload[key] or "").strip()
+            for key in allowed
+            if key in payload
+        }
         if "current_stage" in updates:
             try:
                 updates["current_stage"] = normalize_stage(updates["current_stage"])
@@ -1015,40 +1228,65 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError as error:
                 self.send_error_json(str(error))
                 return
+        for round_field in ("assessment_round", "interview_round"):
+            if round_field in updates:
+                try:
+                    updates[round_field] = str(max(int(updates[round_field]), 1))
+                except ValueError:
+                    self.send_error_json("Invalid round value")
+                    return
         if "status" in updates:
             try:
                 updates["status"] = normalize_status(updates["status"])
             except ValueError as error:
                 self.send_error_json(str(error))
                 return
+            transition_stage, transition_status = apply_transition_status(
+                updates.get("current_stage", ""),
+                updates["status"],
+            )
+            if transition_stage:
+                updates["current_stage"] = transition_stage
+            updates["status"] = transition_status
             inferred_stage = stage_for_status(updates["status"])
             if inferred_stage and "current_stage" not in updates:
                 updates["current_stage"] = inferred_stage
-        if updates.get("current_stage") == "SAVED":
+        if updates.get("current_stage") == "SAVED" and updates.get("status") not in {SAVED_TO_APPLIED_STATUS, SAVED_NOT_APPLY_STATUS}:
             updates["status"] = "SAVED"
             updates["apply_time"] = ""
+        if updates.get("current_stage") == "ARCHIVED" and "status" not in updates:
+            updates["status"] = "ARCHIVED"
         if not updates:
             self.send_error_json("No supported fields to update")
             return
         updates["updated_at"] = utc_now()
 
-        assignments = ", ".join([f"{key} = ?" for key in updates.keys()])
-        params = list(updates.values()) + [job_id]
         with db() as conn:
             existing = conn.execute(
-                "SELECT current_stage, status, next_action FROM job_applications WHERE id = ?", (job_id,)
+                "SELECT current_stage, status, next_action, assessment_round, interview_round FROM job_applications WHERE id = ?", (job_id,)
             ).fetchone()
             if not existing:
                 self.send_error_json("Job not found", HTTPStatus.NOT_FOUND)
                 return
+            if updates.get("status") == ASSESSMENT_NEXT_ROUND_STATUS:
+                updates["assessment_round"] = max(int(existing["assessment_round"] or 1) + 1, 2)
+                updates["status"] = ASSESSMENT_INVITED_STATUS
+                updates["current_stage"] = "ASSESSMENT"
+            if updates.get("status") == INTERVIEW_NEXT_ROUND_STATUS:
+                updates["interview_round"] = max(int(existing["interview_round"] or 1) + 1, 2)
+                updates["status"] = INTERVIEW_INVITED_STATUS
+                updates["current_stage"] = "INTERVIEW"
+            if updates.get("status") == INTERVIEW_FINAL_STATUS and existing["status"] != INTERVIEW_FINAL_STATUS:
+                updates["interview_round"] = int(existing["interview_round"] or 1) + 1
+                updates["current_stage"] = "INTERVIEW"
             if ("current_stage" in updates or "status" in updates) and "next_action" not in updates:
                 next_stage = updates.get("current_stage", existing["current_stage"])
                 next_status = updates.get("status", existing["status"])
                 if should_default_next_action(existing["next_action"], existing["current_stage"], existing["status"]):
                     updates["next_action"] = default_next_action(next_stage, next_status)
                     updates["updated_at"] = utc_now()
-                    assignments = ", ".join([f"{key} = ?" for key in updates.keys()])
-                    params = list(updates.values()) + [job_id]
+            assignments = ", ".join([f"{key} = ?" for key in updates.keys()])
+            params = list(updates.values()) + [job_id]
             conn.execute(f"UPDATE job_applications SET {assignments} WHERE id = ?", params)
             stage_changed = (
                 "current_stage" in updates
