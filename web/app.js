@@ -1808,13 +1808,13 @@ function buildSummaryStats() {
   // Sankey / funnel only counts jobs that have been submitted (not saved or archived)
   const appliedJobs = allJobs.filter((job) => !["SAVED", "ARCHIVED"].includes(job.current_stage));
   const appliedTotal = appliedJobs.length;
-  const appliedRejectedJobs = allJobs.filter((job) => job.status === "APPLIED_REJECTED");
-  const assessmentTotal = allJobs.filter((job) => (
+  const appliedRejectedJobs = appliedJobs.filter((job) => job.status === "APPLIED_REJECTED");
+  const assessmentTotal = appliedJobs.filter((job) => (
     job.current_stage === "ASSESSMENT" || job.current_stage === "INTERVIEW"
   )).length;
-  const assessmentRejectedJobs = allJobs.filter((job) => job.status === "ASSESSMENT_REJECTED");
-  const interviewTotal = allJobs.filter((job) => job.current_stage === "INTERVIEW").length;
-  const interviewRejectedJobs = allJobs.filter((job) => job.status === "INTERVIEW_REJECTED");
+  const assessmentRejectedJobs = appliedJobs.filter((job) => job.status === "ASSESSMENT_REJECTED");
+  const interviewTotal = appliedJobs.filter((job) => job.current_stage === "INTERVIEW").length;
+  const interviewRejectedJobs = appliedJobs.filter((job) => job.status === "INTERVIEW_REJECTED");
 
   return {
     total,
@@ -1978,10 +1978,11 @@ function renderSummaryView() {
   const stats = buildSummaryStats();
   summary.textContent = t("summaryText", { total: stats.appliedTotal, active: stats.activeOrUnknown });
 
-  // Conversion rates (exclude SAVED and ARCHIVED from denominator)
-  const appliedBase = allJobs.filter((j) => !["SAVED", "ARCHIVED"].includes(j.current_stage)).length;
+  // Conversion rates are calculated from every submitted role, excluding SAVED and ARCHIVED.
+  const appliedJobs = allJobs.filter((j) => !["SAVED", "ARCHIVED"].includes(j.current_stage));
+  const appliedBase = appliedJobs.length;
   const totalRejected = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
-  const gotReply = allJobs.filter((j) => !["SAVED", "ARCHIVED"].includes(j.current_stage) && j.status !== "APPLIED_SUCCESS").length;
+  const gotReply = appliedJobs.filter((j) => j.status !== "APPLIED_SUCCESS").length;
   const pct = (n, d) => d > 0 ? `${Math.round((n / d) * 100)}%` : "—";
 
   const rateCards = [
@@ -1991,9 +1992,9 @@ function renderSummaryView() {
     { label: t("rejectionRate"), value: pct(totalRejected, appliedBase), note: `${totalRejected}/${appliedBase}` },
   ];
 
-  // Substatus distribution — count jobs per substatus, all stages
+  // Substatus distribution — count submitted jobs per substatus, all stages
   const subCounts = {};
-  allJobs.forEach((j) => {
+  appliedJobs.forEach((j) => {
     const key = j.status || "UNKNOWN";
     subCounts[key] = (subCounts[key] || 0) + 1;
   });
@@ -3561,7 +3562,7 @@ async function loadProfiles() {
 
 async function loadJobs() {
   const params = new URLSearchParams();
-  if (searchInput.value.trim()) params.set("q", searchInput.value.trim());
+  if (activeView === "APPLICATIONS" && searchInput.value.trim()) params.set("q", searchInput.value.trim());
   allJobs = await api(`/api/jobs?${params.toString()}`);
   jobs = allJobs;
   renderStatusControls();
