@@ -210,6 +210,9 @@ const I18N = {
     tableTimeline: "时间线",
     tableNextAction: "下一步",
     tableDeadline: "Deadline",
+    tableMenuDefault: "默认排序",
+    tableMenuDeadlineUrgency: "按 DDL 紧急程度排序",
+    tableMenuActiveOnly: "只看还在流程中",
     deadlineEmpty: "选择 Deadline",
     deadlineManual: "手动输入日/月/年",
     deadlineRolling: "roling base",
@@ -503,6 +506,9 @@ const I18N = {
     tableTimeline: "Timeline",
     tableNextAction: "Next action",
     tableDeadline: "Deadline",
+    tableMenuDefault: "Default order",
+    tableMenuDeadlineUrgency: "Sort by deadline urgency",
+    tableMenuActiveOnly: "Active pipeline only",
     deadlineEmpty: "Choose deadline",
     deadlineManual: "Enter date manually",
     deadlineRolling: "roling base",
@@ -979,6 +985,8 @@ const MODULE_TEXT = {
 
 let jobs = [];
 let allJobs = [];
+let tableDeadlineSort = "DEFAULT";
+let tableStageFilter = "DEFAULT";
 let resumeProfiles = [];
 let userProfile = {};
 let questionBankItems = [];
@@ -1260,17 +1268,70 @@ function deadlineSelectHtml(job) {
   `;
 }
 
+function tableHeaderMenu(label, menuKey, active) {
+  return `
+    <div class="table-head-menu">
+      <span>${label}</span>
+      <button type="button" class="table-head-menu-trigger ${active ? "is-active" : ""}" data-table-menu="${menuKey}" aria-label="${label}">
+        ▾
+      </button>
+      <div class="table-head-popover" data-table-popover="${menuKey}" hidden></div>
+    </div>
+  `;
+}
+
 function renderApplicationTableHead() {
   applicationsTableHead.innerHTML = `
     <tr>
       <th><span>${t("tablePosition")}</span></th>
-      <th><span>${t("tableStage")}</span></th>
+      <th>${tableHeaderMenu(t("tableStage"), "stage", tableStageFilter !== "DEFAULT")}</th>
       <th><span>${t("tableNextAction")}</span></th>
-      <th><span>${t("tableDeadline")}</span></th>
+      <th>${tableHeaderMenu(t("tableDeadline"), "deadline", tableDeadlineSort !== "DEFAULT")}</th>
       <th><span>${t("tableUpdated")}</span></th>
       <th><span>${t("tableActions")}</span></th>
     </tr>
   `;
+
+  const stagePopover = applicationsTableHead.querySelector('[data-table-popover="stage"]');
+  const deadlinePopover = applicationsTableHead.querySelector('[data-table-popover="deadline"]');
+  if (stagePopover) {
+    stagePopover.innerHTML = `
+      <button type="button" data-stage-filter="ACTIVE" class="${tableStageFilter === "ACTIVE" ? "is-selected" : ""}">${t("tableMenuActiveOnly")}</button>
+      <button type="button" data-stage-filter="DEFAULT" class="${tableStageFilter === "DEFAULT" ? "is-selected" : ""}">${t("tableMenuDefault")}</button>
+    `;
+  }
+  if (deadlinePopover) {
+    deadlinePopover.innerHTML = `
+      <button type="button" data-deadline-sort="URGENCY" class="${tableDeadlineSort === "URGENCY" ? "is-selected" : ""}">${t("tableMenuDeadlineUrgency")}</button>
+      <button type="button" data-deadline-sort="DEFAULT" class="${tableDeadlineSort === "DEFAULT" ? "is-selected" : ""}">${t("tableMenuDefault")}</button>
+    `;
+  }
+
+  applicationsTableHead.querySelectorAll("[data-table-menu]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const key = button.dataset.tableMenu;
+      applicationsTableHead.querySelectorAll("[data-table-popover]").forEach((popover) => {
+        popover.hidden = popover.dataset.tablePopover !== key || !popover.hidden;
+      });
+    });
+  });
+
+  applicationsTableHead.querySelectorAll("[data-stage-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      tableStageFilter = button.dataset.stageFilter;
+      renderApplicationTableHead();
+      renderJobs();
+    });
+  });
+
+  applicationsTableHead.querySelectorAll("[data-deadline-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      tableDeadlineSort = button.dataset.deadlineSort;
+      renderApplicationTableHead();
+      renderJobs();
+    });
+  });
 }
 
 function formatDate(value) {
@@ -1608,7 +1669,59 @@ function dateInputValue(value) {
   return date.toISOString().slice(0, 10);
 }
 
+function parseDeadlineDate(deadline) {
+  const value = String(deadline || "").trim();
+  if (!value || value.toLowerCase() === DEADLINE_ROLLING_VALUE) return null;
+  let match = value.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  if (match) {
+    const [, year, month, day] = match.map(Number);
+    const date = new Date(year, month - 1, day);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  match = value.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})$/);
+  if (match) {
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const rawYear = Number(match[3]);
+    const year = rawYear < 100 ? 2000 + rawYear : rawYear;
+    const date = new Date(year, month - 1, day);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function deadlineUrgencyScore(job) {
+  const date = parseDeadlineDate(job.deadline);
+  if (!date) return Number.POSITIVE_INFINITY;
+  return date.getTime();
+}
+
+function isActivePipelineJob(job) {
+  return ["APPLIED", "ASSESSMENT", "INTERVIEW"].includes(job.current_stage)
+    && !isRejected(job)
+    && job.status !== "OFFER"
+    && !isArchived(job);
+}
+
+function visibleApplicationJobs() {
+  let visible = [...allJobs];
+  if (tableStageFilter === "ACTIVE") {
+    visible = visible.filter(isActivePipelineJob);
+  }
+  if (tableDeadlineSort === "URGENCY") {
+    visible.sort((a, b) => {
+      const aScore = deadlineUrgencyScore(a);
+      const bScore = deadlineUrgencyScore(b);
+      if (aScore !== bScore) return aScore - bScore;
+      return String(b.updated_at || b.created_at || "").localeCompare(String(a.updated_at || a.created_at || ""));
+    });
+  }
+  return visible;
+}
+
 function renderJobs() {
+  jobs = visibleApplicationJobs();
   summary.textContent = t("jobsCount", { count: jobs.length });
   emptyState.style.display = jobs.length ? "none" : "block";
   jobsTable.innerHTML = jobs.map((job) => `
@@ -3894,6 +4007,13 @@ editPersonalInfoBtn.addEventListener("click", openPersonalInfoDialog);
 searchInput.addEventListener("input", () => {
   clearTimeout(searchInput.searchTimer);
   searchInput.searchTimer = setTimeout(loadJobs, 180);
+});
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest(".table-head-menu")) return;
+  applicationsTableHead.querySelectorAll("[data-table-popover]").forEach((popover) => {
+    popover.hidden = true;
+  });
 });
 
 stageSelect.addEventListener("change", () => {

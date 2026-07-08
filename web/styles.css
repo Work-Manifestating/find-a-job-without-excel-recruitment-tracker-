@@ -1247,6 +1247,71 @@ th {
   text-transform: uppercase;
 }
 
+.table-head-menu {
+  align-items: center;
+  display: inline-flex;
+  gap: 5px;
+  position: relative;
+}
+
+.table-head-menu-trigger {
+  align-items: center;
+  background: #fffffe;
+  border: 1px solid rgb(51 39 42 / 18%);
+  border-radius: 5px;
+  color: #33272a;
+  display: inline-flex;
+  font-size: 12px;
+  height: 22px;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0;
+  width: 22px;
+}
+
+.table-head-menu-trigger.is-active {
+  background: var(--accent-soft);
+  border-color: #33272a;
+}
+
+.table-head-popover {
+  background: #fffffe;
+  border: 1px solid #33272a;
+  border-radius: 7px;
+  box-shadow: 3px 3px 0 #33272a;
+  display: grid;
+  gap: 4px;
+  left: 0;
+  min-width: 170px;
+  padding: 6px;
+  position: absolute;
+  text-transform: none;
+  top: 28px;
+  z-index: 20;
+}
+
+.table-head-popover[hidden] {
+  display: none;
+}
+
+.table-head-popover button {
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: var(--text);
+  font-size: 12px;
+  justify-content: flex-start;
+  min-height: 30px;
+  padding: 6px 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.table-head-popover button:hover,
+.table-head-popover button.is-selected {
+  background: var(--panel-tinted);
+}
+
 tbody tr:hover {
   background: #fff7f2;
 }
