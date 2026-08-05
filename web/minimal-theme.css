@@ -1,0 +1,409 @@
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --panel-tinted: #f8fafc;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --accent: #2f8f83;
+  --accent-dark: #256f68;
+  --accent-soft: #dff3ef;
+  --success: #d1fae5;
+  --ink-soft: #4b5563;
+  --warning: #b45309;
+  --danger: #dc2626;
+  --border: #e5e7eb;
+  --surface-2: #f8fafc;
+  --shadow: 0 14px 34px rgb(15 23 42 / 8%);
+  --shadow-soft: 0 8px 22px rgb(15 23 42 / 6%);
+  --radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+strong,
+th {
+  font-weight: 600;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: 0;
+}
+
+p,
+.muted,
+.summary-nav-button,
+.status-filter,
+button,
+input,
+select,
+textarea {
+  line-height: 1.45;
+}
+
+button {
+  border-color: var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  box-shadow: none;
+  color: var(--text);
+  font-weight: 650;
+}
+
+button:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  box-shadow: none;
+  transform: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgb(47 143 131 / 22%);
+}
+
+.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.primary:hover {
+  border-color: var(--accent-dark);
+  background: var(--accent-dark);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.app-shell,
+.app-shell.sidebar-collapsed {
+  display: grid;
+  grid-template-columns: clamp(188px, 22vw, 248px) minmax(0, 1fr);
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.app-shell.sidebar-collapsed {
+  grid-template-columns: 44px minmax(0, 1fr);
+}
+
+.sidebar {
+  border-right: 1px solid var(--line);
+  border-bottom: 0;
+  background: #ffffff;
+  color: var(--text);
+  height: 100vh;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar-collapse-btn {
+  color: var(--muted);
+}
+
+.sidebar-collapse-btn:hover {
+  background: #f8fafc;
+  color: var(--text);
+}
+
+.sidebar-content {
+  padding: 0 14px 22px;
+}
+
+.brand-block {
+  grid-template-columns: 38px minmax(0, 1fr);
+}
+
+.brand-logo {
+  height: 38px;
+  width: 38px;
+}
+
+.sidebar .eyebrow,
+.eyebrow {
+  color: var(--muted);
+}
+
+.sidebar h1 {
+  color: var(--text);
+  font-size: 20px;
+  letter-spacing: 0;
+}
+
+.sidebar-topline #languageToggle {
+  border-color: var(--line);
+  background: #f8fafc;
+  color: var(--muted);
+}
+
+.primary-nav {
+  border-bottom-color: var(--line);
+}
+
+.nav-group-label {
+  color: var(--muted);
+}
+
+.summary-nav-button,
+.status-filter {
+  color: var(--muted);
+}
+
+.summary-nav-button:hover,
+.status-filter:hover {
+  background: #f8fafc;
+  color: var(--text);
+}
+
+.summary-nav-button.active,
+.status-filter.active,
+.sidebar-home-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  box-shadow: none;
+}
+
+.sidebar-home-btn {
+  color: var(--text);
+}
+
+.main {
+  min-width: 0;
+  padding: 22px clamp(16px, 3vw, 32px) 40px;
+}
+
+.toolbar,
+.table-wrap,
+.dashboard-card,
+.module-card,
+.module-item-card,
+.weekly-section,
+.summary-metric-card,
+.sankey-card,
+.profile-card,
+.personal-info-panel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.toolbar {
+  border-radius: 10px;
+}
+
+.export-dropdown summary,
+.export-menu,
+.table-head-popover,
+.weekly-notes-preview,
+.job-detail-panel {
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-soft);
+}
+
+.export-menu button:hover,
+.table-head-popover button:hover,
+.table-head-popover button.is-selected {
+  background: var(--panel-tinted);
+}
+
+th {
+  background: #f8fafc;
+  color: var(--muted);
+}
+
+td {
+  background: #ffffff;
+}
+
+tbody tr:hover td,
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+tbody tr.saved-row {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+tbody tr.rejected-row {
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+tbody tr.archived-row {
+  background: #f3f4f6;
+}
+
+.job-link,
+.timeline-button,
+a {
+  color: var(--accent-dark);
+}
+
+.inline-status,
+.inline-deadline,
+.controls input,
+.dialog-form input,
+.dialog-form select,
+.dialog-form textarea,
+.timeline-form input,
+.timeline-form textarea,
+.calendar-note-editor textarea,
+.note-field-input {
+  border-color: var(--line);
+  background: #ffffff;
+  color: var(--text);
+}
+
+.dashboard-card-wide:first-child {
+  background: #ffffff;
+}
+
+.dashboard-metrics button,
+.calendar-mini,
+.dashboard-list button,
+.module-item-row,
+.calendar-activity-row,
+.coming-soon-card,
+.heatmap-month {
+  border-color: var(--line);
+  background: var(--panel-tinted);
+  box-shadow: none;
+}
+
+.sankey-flow {
+  opacity: 0.45;
+}
+
+.sankey-flow.stage-flow {
+  stroke: #60a5fa;
+}
+
+.sankey-flow.active-flow {
+  stroke: #34d399;
+}
+
+.sankey-flow.rejected-flow {
+  stroke: #f87171;
+}
+
+.sankey-node rect {
+  stroke: var(--line);
+}
+
+.sankey-node.root rect,
+.sankey-node.stage rect {
+  fill: #eff6ff;
+}
+
+.sankey-node.active rect {
+  fill: #ecfdf5;
+}
+
+.sankey-node.rejected rect {
+  fill: #fef2f2;
+}
+
+
+
+.prep-action-btn {
+  border-color: #b7d8d1;
+  background: #e7f6f2;
+  color: #1f5f58;
+  box-shadow: none;
+}
+
+.prep-action-btn:hover {
+  border-color: #8fc5ba;
+  background: #d7eee9;
+  color: #174c46;
+  box-shadow: none;
+}
+
+.danger-button {
+  border-color: #fecaca;
+  background: #fff;
+  color: var(--danger);
+}
+
+@media (max-width: 980px) {
+  .app-shell {
+    grid-template-columns: clamp(164px, 34vw, 220px) minmax(0, 1fr);
+  }
+
+  .sidebar {
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    grid-template-columns: 104px minmax(0, 1fr);
+  }
+
+  .sidebar-content {
+    padding: 0 8px 16px;
+  }
+
+  .brand-block {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .brand-logo {
+    height: 32px;
+    width: 32px;
+  }
+
+  .sidebar h1 {
+    font-size: 13px;
+  }
+
+  .sidebar .eyebrow,
+  .nav-group-label {
+    font-size: 9px;
+  }
+
+  .summary-nav-button,
+  .status-filter {
+    font-size: 11px;
+    padding: 6px;
+  }
+
+  .sidebar-topline #languageToggle {
+    font-size: 10px;
+    padding: 0 6px;
+  }
+
+  .main {
+    padding: 14px;
+  }
+}

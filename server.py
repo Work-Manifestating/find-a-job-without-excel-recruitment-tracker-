@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import os
 import re
 import shutil
 import sqlite3
@@ -24,6 +25,21 @@ JOBS_DIR = DATA_DIR / "jobs"
 RESUMES_DIR = DATA_DIR / "resumes"
 DB_PATH = DATA_DIR / "tracker.db"
 WEB_DIR = ROOT / "web"
+CAREER_OPS_ROOT = Path(
+    os.environ.get("CAREER_OPS_ROOT", str(ROOT.parent / "career-ops"))
+).resolve()
+
+KNOWN_ARTIFACT_TYPES = {
+    "evaluation_report",
+    "cv_html",
+    "cv_pdf",
+    "cover_letter_html",
+    "cover_letter_pdf",
+    "interview_prep",
+    "application_answers",
+    "outreach",
+    "follow_up",
+}
 
 DEFAULT_STAGE = "SAVED"
 DEFAULT_STATUS = "SAVED"
@@ -324,12 +340,47 @@ def init_db() -> None:
                     ON DELETE CASCADE
             );
 
+            CREATE TABLE IF NOT EXISTS job_evaluations (
+                job_application_id INTEGER PRIMARY KEY,
+                score REAL,
+                legitimacy TEXT NOT NULL DEFAULT '',
+                recommendation TEXT NOT NULL DEFAULT '',
+                summary TEXT NOT NULL DEFAULT '',
+                metadata_json TEXT NOT NULL DEFAULT '{}',
+                evaluated_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (job_application_id)
+                    REFERENCES job_applications(id)
+                    ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS job_artifacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_application_id INTEGER NOT NULL,
+                artifact_type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                local_path TEXT NOT NULL,
+                mime_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+                version INTEGER NOT NULL DEFAULT 1,
+                metadata_json TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(job_application_id, artifact_type, local_path),
+                FOREIGN KEY (job_application_id)
+                    REFERENCES job_applications(id)
+                    ON DELETE CASCADE
+            );
+
             CREATE INDEX IF NOT EXISTS idx_jobs_status
                 ON job_applications(status);
             CREATE INDEX IF NOT EXISTS idx_timeline_job
                 ON timeline_events(job_application_id);
             CREATE INDEX IF NOT EXISTS idx_resume_profiles_name
                 ON resume_profiles(name);
+            CREATE INDEX IF NOT EXISTS idx_job_artifacts_job
+                ON job_artifacts(job_application_id);
+            CREATE INDEX IF NOT EXISTS idx_job_artifacts_type
+                ON job_artifacts(artifact_type);
             """
         )
         columns = {
@@ -498,6 +549,35 @@ def company_note_row_to_dict(row: sqlite3.Row) -> dict:
     data = row_to_dict(row)
     data["tags"] = safe_json_loads(data.get("tags"), [])
     return data
+
+
+def evaluation_row_to_dict(row: sqlite3.Row) -> dict:
+    data = row_to_dict(row)
+    data["metadata"] = safe_json_loads(data.pop("metadata_json", "{}"), {})
+    return data
+
+
+def artifact_row_to_dict(row: sqlite3.Row) -> dict:
+    data = row_to_dict(row)
+    data["metadata"] = safe_json_loads(data.pop("metadata_json", "{}"), {})
+    data["file_url"] = f"/api/artifacts/{data['id']}/file"
+    return data
+
+
+def normalize_artifact_path(value: str) -> tuple[str, Path]:
+    path_text = str(value or "").strip()
+    if not path_text:
+        raise ValueError("local_path is required")
+    raw_path = Path(path_text).expanduser()
+    allowed_root = CAREER_OPS_ROOT.resolve()
+    target = raw_path.resolve() if raw_path.is_absolute() else (allowed_root / raw_path).resolve()
+    try:
+        relative = target.relative_to(allowed_root)
+    except ValueError as exc:
+        raise ValueError("Artifact must be inside the configured career-ops repository") from exc
+    if not target.is_file():
+        raise ValueError("Artifact file does not exist")
+    return relative.as_posix(), target
 
 
 SHARED_PROFILE_KEYS = (
@@ -856,7 +936,14 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
 
     def end_headers(self) -> None:
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = self.headers.get("Origin", "")
+        allowed_origins = {
+            "http://127.0.0.1:8765",
+            "http://localhost:8765",
+        }
+        if origin in allowed_origins or origin.startswith("chrome-extension://"):
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         super().end_headers()
@@ -887,9 +974,20 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = unquote(parsed.path)
 
+        if path == "/api/integrations/career-ops/health":
+            self.career_ops_health()
+            return
+        if path == "/api/jobs/resolve":
+            self.resolve_job(parse_qs(parsed.query))
+            return
         if path == "/api/jobs":
             self.list_jobs(parse_qs(parsed.query))
             return
+        if path.startswith("/api/artifacts/"):
+            parts = path.strip("/").split("/")
+            if len(parts) == 4 and parts[2].isdigit() and parts[3] == "file":
+                self.serve_artifact_file(int(parts[2]))
+                return
         if path == "/api/resume-profiles":
             self.list_resume_profiles()
             return
@@ -920,6 +1018,12 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if len(parts) == 4 and parts[2].isdigit() and parts[3] == "prep":
                 self.get_job_prep(int(parts[2]))
+                return
+            if len(parts) == 4 and parts[2].isdigit() and parts[3] == "evaluation":
+                self.get_job_evaluation(int(parts[2]))
+                return
+            if len(parts) == 4 and parts[2].isdigit() and parts[3] == "artifacts":
+                self.list_job_artifacts(int(parts[2]))
                 return
 
         if path == "/api/weekly-review":
@@ -956,6 +1060,12 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if len(parts) == 4 and parts[2].isdigit() and parts[3] == "prep":
                 self.toggle_prep_item(int(parts[2]))
+                return
+            if len(parts) == 4 and parts[2].isdigit() and parts[3] == "evaluation":
+                self.upsert_job_evaluation(int(parts[2]))
+                return
+            if len(parts) == 4 and parts[2].isdigit() and parts[3] == "artifacts":
+                self.upsert_job_artifact(int(parts[2]))
                 return
         if path == "/api/question-bank":
             self.create_question()
@@ -1079,6 +1189,212 @@ class Handler(BaseHTTPRequestHandler):
         if search:
             jobs = [job for job in jobs if job_matches_search(job, search)]
         self.send_json(jobs)
+
+    def career_ops_health(self) -> None:
+        with db() as conn:
+            job_count = conn.execute("SELECT COUNT(*) FROM job_applications").fetchone()[0]
+            evaluation_count = conn.execute("SELECT COUNT(*) FROM job_evaluations").fetchone()[0]
+            artifact_count = conn.execute("SELECT COUNT(*) FROM job_artifacts").fetchone()[0]
+        self.send_json({
+            "ok": True,
+            "integration": "career-ops",
+            "career_ops_root": str(CAREER_OPS_ROOT),
+            "career_ops_root_exists": CAREER_OPS_ROOT.is_dir(),
+            "jobs": job_count,
+            "evaluations": evaluation_count,
+            "artifacts": artifact_count,
+        })
+
+    def resolve_job(self, query: dict) -> None:
+        source_url = (query.get("source_url", [""])[0] or "").strip()
+        company = (query.get("company", [""])[0] or "").strip().lower()
+        position = (query.get("position", [""])[0] or "").strip().lower()
+        with db() as conn:
+            if source_url:
+                row = conn.execute(
+                    "SELECT * FROM job_applications WHERE lower(trim(source_url)) = lower(trim(?)) ORDER BY id DESC LIMIT 1",
+                    (source_url,),
+                ).fetchone()
+                if row:
+                    self.send_json({"matched_by": "source_url", "job": row_to_dict(row)})
+                    return
+            rows = conn.execute(
+                "SELECT * FROM job_applications WHERE lower(trim(company_name)) = ? ORDER BY id DESC",
+                (company,),
+            ).fetchall() if company else []
+        for row in rows:
+            candidate = str(row["position_name"] or "").strip().lower()
+            if position and (candidate == position or candidate in position or position in candidate):
+                self.send_json({"matched_by": "company_position", "job": row_to_dict(row)})
+                return
+        self.send_json({"matched_by": None, "job": None})
+
+    def get_job_evaluation(self, job_id: int) -> None:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT * FROM job_evaluations WHERE job_application_id = ?",
+                (job_id,),
+            ).fetchone()
+        self.send_json(evaluation_row_to_dict(row) if row else None)
+
+    def upsert_job_evaluation(self, job_id: int) -> None:
+        payload = self.read_json()
+        score = payload.get("score")
+        if score not in (None, ""):
+            try:
+                score = float(score)
+            except (TypeError, ValueError):
+                self.send_error_json("score must be a number between 0 and 5")
+                return
+            if not 0 <= score <= 5:
+                self.send_error_json("score must be a number between 0 and 5")
+                return
+        else:
+            score = None
+        metadata = payload.get("metadata", {})
+        if not isinstance(metadata, dict):
+            self.send_error_json("metadata must be an object")
+            return
+        now = utc_now()
+        evaluated_at = str(payload.get("evaluated_at") or now).strip()
+        with db() as conn:
+            job = conn.execute(
+                "SELECT id FROM job_applications WHERE id = ?", (job_id,)
+            ).fetchone()
+            if not job:
+                self.send_error_json("Job not found", HTTPStatus.NOT_FOUND)
+                return
+            existed = conn.execute(
+                "SELECT 1 FROM job_evaluations WHERE job_application_id = ?", (job_id,)
+            ).fetchone()
+            conn.execute(
+                """
+                INSERT INTO job_evaluations (
+                    job_application_id, score, legitimacy, recommendation,
+                    summary, metadata_json, evaluated_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(job_application_id) DO UPDATE SET
+                    score = excluded.score,
+                    legitimacy = excluded.legitimacy,
+                    recommendation = excluded.recommendation,
+                    summary = excluded.summary,
+                    metadata_json = excluded.metadata_json,
+                    evaluated_at = excluded.evaluated_at,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    job_id,
+                    score,
+                    str(payload.get("legitimacy") or "").strip(),
+                    str(payload.get("recommendation") or "").strip(),
+                    str(payload.get("summary") or "").strip(),
+                    json.dumps(metadata, ensure_ascii=False),
+                    evaluated_at,
+                    now,
+                ),
+            )
+            if not existed:
+                conn.execute(
+                    """
+                    INSERT INTO timeline_events (
+                        job_application_id, event_type, event_title,
+                        event_time, source, notes, created_at
+                    ) VALUES (?, 'EVALUATED', ?, ?, 'career-ops', ?, ?)
+                    """,
+                    (
+                        job_id,
+                        "career-ops 完成岗位评估",
+                        evaluated_at,
+                        f"Score: {score}/5" if score is not None else "",
+                        now,
+                    ),
+                )
+        self.get_job_evaluation(job_id)
+
+    def list_job_artifacts(self, job_id: int) -> None:
+        with db() as conn:
+            job = conn.execute("SELECT id FROM job_applications WHERE id = ?", (job_id,)).fetchone()
+            if not job:
+                self.send_error_json("Job not found", HTTPStatus.NOT_FOUND)
+                return
+            rows = conn.execute(
+                "SELECT * FROM job_artifacts WHERE job_application_id = ? ORDER BY artifact_type, version DESC, id DESC",
+                (job_id,),
+            ).fetchall()
+        self.send_json([artifact_row_to_dict(row) for row in rows])
+
+    def upsert_job_artifact(self, job_id: int) -> None:
+        payload = self.read_json()
+        artifact_type = str(payload.get("artifact_type") or "").strip()
+        if artifact_type not in KNOWN_ARTIFACT_TYPES:
+            self.send_error_json(f"artifact_type must be one of: {', '.join(sorted(KNOWN_ARTIFACT_TYPES))}")
+            return
+        try:
+            local_path, target = normalize_artifact_path(payload.get("local_path", ""))
+            version = max(int(payload.get("version") or 1), 1)
+        except (TypeError, ValueError) as error:
+            self.send_error_json(str(error))
+            return
+        metadata = payload.get("metadata", {})
+        if not isinstance(metadata, dict):
+            self.send_error_json("metadata must be an object")
+            return
+        title = str(payload.get("title") or target.name).strip()
+        mime_type = str(
+            payload.get("mime_type")
+            or mimetypes.guess_type(target.name)[0]
+            or "application/octet-stream"
+        ).strip()
+        now = utc_now()
+        with db() as conn:
+            job = conn.execute("SELECT id FROM job_applications WHERE id = ?", (job_id,)).fetchone()
+            if not job:
+                self.send_error_json("Job not found", HTTPStatus.NOT_FOUND)
+                return
+            conn.execute(
+                """
+                INSERT INTO job_artifacts (
+                    job_application_id, artifact_type, title, local_path,
+                    mime_type, version, metadata_json, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(job_application_id, artifact_type, local_path) DO UPDATE SET
+                    title = excluded.title,
+                    mime_type = excluded.mime_type,
+                    version = excluded.version,
+                    metadata_json = excluded.metadata_json,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    job_id, artifact_type, title, local_path, mime_type, version,
+                    json.dumps(metadata, ensure_ascii=False), now, now,
+                ),
+            )
+            row = conn.execute(
+                "SELECT * FROM job_artifacts WHERE job_application_id = ? AND artifact_type = ? AND local_path = ?",
+                (job_id, artifact_type, local_path),
+            ).fetchone()
+        self.send_json(artifact_row_to_dict(row), HTTPStatus.CREATED)
+
+    def serve_artifact_file(self, artifact_id: int) -> None:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT local_path, mime_type FROM job_artifacts WHERE id = ?", (artifact_id,)
+            ).fetchone()
+        if not row:
+            self.send_error_json("Artifact not found", HTTPStatus.NOT_FOUND)
+            return
+        try:
+            _, target = normalize_artifact_path(row["local_path"])
+        except ValueError as error:
+            self.send_error_json(str(error), HTTPStatus.NOT_FOUND)
+            return
+        body = target.read_bytes()
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", row["mime_type"] or "application/octet-stream")
+        self.send_header("Content-Disposition", f"inline; filename={target.name}")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def get_job(self, job_id: int) -> None:
         with db() as conn:
@@ -1597,6 +1913,14 @@ class Handler(BaseHTTPRequestHandler):
                 "SELECT item_type, item_id, is_ready FROM interview_prep WHERE job_application_id = ?",
                 (job_id,),
             ).fetchall()
+            evaluation = conn.execute(
+                "SELECT * FROM job_evaluations WHERE job_application_id = ?",
+                (job_id,),
+            ).fetchone()
+            artifacts = conn.execute(
+                "SELECT * FROM job_artifacts WHERE job_application_id = ? ORDER BY artifact_type, version DESC, id DESC",
+                (job_id,),
+            ).fetchall()
         ready_map = {(r["item_type"], r["item_id"]): r["is_ready"] for r in ready_rows}
         q_list = []
         for q in questions:
@@ -1608,7 +1932,13 @@ class Handler(BaseHTTPRequestHandler):
             d = story_row_to_dict(s)
             d["is_ready"] = ready_map.get(("story", d["id"]), 0)
             s_list.append(d)
-        self.send_json({"job": row_to_dict(job), "questions": q_list, "stories": s_list})
+        self.send_json({
+            "job": row_to_dict(job),
+            "questions": q_list,
+            "stories": s_list,
+            "evaluation": evaluation_row_to_dict(evaluation) if evaluation else None,
+            "artifacts": [artifact_row_to_dict(row) for row in artifacts],
+        })
 
     def toggle_prep_item(self, job_id: int) -> None:
         body = self.read_json()

@@ -1515,6 +1515,54 @@ a:hover {
   margin-bottom: 10px;
 }
 
+.career-ops-panel {
+  grid-column: 1 / -1;
+}
+
+.career-evaluation-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+.career-evaluation-summary p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.career-artifact-list {
+  display: grid;
+  gap: 8px;
+}
+
+.career-artifact-link {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--text);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 10px 12px;
+  text-decoration: none;
+}
+
+.career-artifact-link:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgb(217 79 121 / 12%);
+}
+
+.career-artifact-link span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.career-artifact-link small {
+  color: var(--muted);
+}
+
 .job-detail-actions {
   display: flex;
   flex-wrap: wrap;

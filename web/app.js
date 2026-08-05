@@ -434,6 +434,12 @@ const I18N = {
     prepProgress: "{q}/{qTotal} 题已准备 · {s}/{sTotal} 个故事已准备",
     prepNoQuestions: "题库为空，请先在「题库」中添加题目。",
     prepNoStories: "故事库为空，请先在「故事库」中添加故事。",
+    careerOpsMaterials: "career-ops 材料",
+    noCareerOpsMaterials: "这个岗位还没有关联 career-ops 材料。",
+    evaluationScore: "匹配评分",
+    legitimacyLabel: "岗位可信度",
+    recommendationLabel: "建议",
+    openArtifact: "打开",
   },
   en: {
     navTrack: "Track",
@@ -730,6 +736,12 @@ const I18N = {
     prepProgress: "{q}/{qTotal} questions ready · {s}/{sTotal} stories ready",
     prepNoQuestions: "No questions yet — add some in the Question Bank first.",
     prepNoStories: "No stories yet — add some in the Story Library first.",
+    careerOpsMaterials: "career-ops materials",
+    noCareerOpsMaterials: "No career-ops materials are linked to this role yet.",
+    evaluationScore: "Match score",
+    legitimacyLabel: "Posting legitimacy",
+    recommendationLabel: "Recommendation",
+    openArtifact: "Open",
   },
 };
 
@@ -3256,6 +3268,10 @@ async function renderPrepDialog(target = document) {
 
   target.querySelector("#prepContent").innerHTML = `
     <div class="prep-sections">
+      <div class="prep-section career-ops-panel">
+        <h4 class="prep-section-title">${t("careerOpsMaterials")}</h4>
+        ${careerOpsMaterialsHtml(data.evaluation, data.artifacts || [])}
+      </div>
       <div class="prep-section prep-section-tech">
         <h4 class="prep-section-title">${t("techGapTitle")}</h4>
         ${techGapHtml}
@@ -3782,8 +3798,65 @@ function detailValue(value, isOption = false) {
   return value ? escapeHtml(value) : "-";
 }
 
+const ARTIFACT_TYPE_LABELS = {
+  zh: {
+    evaluation_report: "评估报告",
+    cv_html: "定制 CV（HTML）",
+    cv_pdf: "定制 CV（PDF）",
+    cover_letter_html: "求职信（HTML）",
+    cover_letter_pdf: "求职信（PDF）",
+    interview_prep: "面试准备",
+    application_answers: "申请答案",
+    outreach: "联系文案",
+    follow_up: "跟进文案",
+  },
+  en: {
+    evaluation_report: "Evaluation report",
+    cv_html: "Tailored CV (HTML)",
+    cv_pdf: "Tailored CV (PDF)",
+    cover_letter_html: "Cover letter (HTML)",
+    cover_letter_pdf: "Cover letter (PDF)",
+    interview_prep: "Interview prep",
+    application_answers: "Application answers",
+    outreach: "Outreach draft",
+    follow_up: "Follow-up draft",
+  },
+};
+
+function artifactTypeLabel(type) {
+  return ARTIFACT_TYPE_LABELS[currentLang]?.[type] || type;
+}
+
+function careerOpsMaterialsHtml(evaluation, artifacts = []) {
+  const evaluationHtml = evaluation ? `
+    <div class="career-evaluation-summary">
+      ${evaluation.score !== null && evaluation.score !== undefined
+        ? `<span><strong>${t("evaluationScore")}</strong> ${escapeHtml(evaluation.score)}/5</span>` : ""}
+      ${evaluation.legitimacy
+        ? `<span><strong>${t("legitimacyLabel")}</strong> ${escapeHtml(evaluation.legitimacy)}</span>` : ""}
+      ${evaluation.recommendation
+        ? `<span><strong>${t("recommendationLabel")}</strong> ${escapeHtml(evaluation.recommendation)}</span>` : ""}
+      ${evaluation.summary ? `<p>${escapeHtml(evaluation.summary)}</p>` : ""}
+    </div>` : "";
+  const artifactHtml = artifacts.map((artifact) => `
+    <a class="career-artifact-link" href="${artifact.file_url}" target="_blank" rel="noreferrer">
+      <span>
+        <strong>${escapeHtml(artifactTypeLabel(artifact.artifact_type))}</strong>
+        <small>${escapeHtml(artifact.title || artifact.local_path)}</small>
+      </span>
+      <span>${t("openArtifact")} ↗</span>
+    </a>`).join("");
+  return evaluationHtml || artifactHtml
+    ? `${evaluationHtml}<div class="career-artifact-list">${artifactHtml}</div>`
+    : `<p class="muted">${t("noCareerOpsMaterials")}</p>`;
+}
+
 async function renderJobDetailDialog(job) {
-  const timeline = await api(`/api/jobs/${job.id}/timeline`);
+  const [timeline, evaluation, artifacts] = await Promise.all([
+    api(`/api/jobs/${job.id}/timeline`),
+    api(`/api/jobs/${job.id}/evaluation`),
+    api(`/api/jobs/${job.id}/artifacts`),
+  ]);
   jobDetailTitle.textContent = job.position_name;
   jobDetailMeta.textContent = `${job.company_name} · ${stageLabelForJob(job)} · ${nextActionLabel(job.next_action)}`;
   jobDetailContent.innerHTML = `
@@ -3835,6 +3908,10 @@ async function renderJobDetailDialog(job) {
           <p class="muted">${formatDate(item.event_time)}</p>
         </div>
       `).join("") : `<p class="muted">${t("noTimeline")}</p>`}
+    </section>
+    <section class="job-detail-panel career-ops-panel">
+      <h4>${t("careerOpsMaterials")}</h4>
+      ${careerOpsMaterialsHtml(evaluation, artifacts)}
     </section>
     <section class="job-detail-actions">
       <button type="button" data-detail-action="timeline">${t("timeline")}</button>
