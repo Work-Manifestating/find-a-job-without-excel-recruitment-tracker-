@@ -43,7 +43,7 @@ KNOWN_ARTIFACT_TYPES = {
 
 DEFAULT_STAGE = "SAVED"
 DEFAULT_STATUS = "SAVED"
-KNOWN_STAGES = {"SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW", "ARCHIVED"}
+KNOWN_STAGES = {"SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW", "OFFER", "ARCHIVED"}
 SAVED_TO_APPLIED_STATUS = "SAVED_TO_APPLIED"
 SAVED_NOT_APPLY_STATUS = "SAVED_NOT_APPLY"
 APPLIED_WAITING_STATUS = "APPLIED_SUCCESS"
@@ -94,6 +94,8 @@ def normalize_stage_status(stage: str, status: str | None) -> str:
         return "SAVED"
     if stage == "ARCHIVED":
         return status or "ARCHIVED"
+    if stage == "OFFER":
+        return INTERVIEW_OFFER_STATUS
     return normalize_status(status)
 
 
@@ -125,9 +127,10 @@ def stage_for_status(status: str) -> str | None:
         INTERVIEW_NEXT_ROUND_STATUS,
         INTERVIEW_FINAL_STATUS,
         INTERVIEW_REJECTED_STATUS,
-        INTERVIEW_OFFER_STATUS,
     }:
         return "INTERVIEW"
+    if status == INTERVIEW_OFFER_STATUS:
+        return "OFFER"
     if status == "ARCHIVED":
         return "ARCHIVED"
     return None
@@ -138,6 +141,8 @@ def default_next_action(stage: str, status: str) -> str:
         return "ARCHIVE"
     if status.endswith("_REJECTED"):
         return "ARCHIVE"
+    if stage == "OFFER" or status == INTERVIEW_OFFER_STATUS:
+        return "COMPLETE_TASK"
     if stage == "SAVED":
         return "DECIDE"
     if stage == "APPLIED":

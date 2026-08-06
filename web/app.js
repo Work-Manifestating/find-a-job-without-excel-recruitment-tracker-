@@ -12,7 +12,7 @@ const INTERVIEW_PROCESS_OPTIONS = [
   "", "UNKNOWN", "HR_PHONE", "OA_VI", "ONE_ROUND", "TWO_ROUNDS",
   "THREE_ROUNDS", "ASSESSMENT_CENTER", "CASE_INTERVIEW", "FINAL_ONLY",
 ];
-const STAGE_OPTIONS = ["SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW", "ARCHIVED"];
+const STAGE_OPTIONS = ["SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW", "OFFER", "ARCHIVED"];
 const NEXT_ACTION_OPTIONS = ["DECIDE", "APPLY", "WAIT", "FOLLOW_UP", "PREPARE", "COMPLETE_TASK", "ARCHIVE"];
 const MODULE_VIEWS = {
   WEEKLY_REVIEW: {
@@ -132,6 +132,7 @@ const SUBSTATUS_BY_STAGE = {
     "INTERVIEW_REJECTED",
     "OFFER",
   ],
+  OFFER: ["OFFER"],
   ARCHIVED: ["ARCHIVED"],
 };
 const CUSTOM_STATUS_VALUE = "__CUSTOM__";
@@ -811,8 +812,8 @@ const STATUS_LABELS = {
 };
 
 const STAGE_LABELS = {
-  zh: { SAVED: "收藏", APPLIED: "投递", ASSESSMENT: "笔试", INTERVIEW: "面试", ARCHIVED: "归档" },
-  en: { SAVED: "Saved", APPLIED: "Applied", ASSESSMENT: "Assessment", INTERVIEW: "Interview", ARCHIVED: "Archived" },
+  zh: { SAVED: "收藏", APPLIED: "投递", ASSESSMENT: "笔试", INTERVIEW: "面试", OFFER: "Offer", ARCHIVED: "归档" },
+  en: { SAVED: "Saved", APPLIED: "Applied", ASSESSMENT: "Assessment", INTERVIEW: "Interview", OFFER: "Offer", ARCHIVED: "Archived" },
 };
 
 const JOB_TYPE_LABELS = {
@@ -1230,8 +1231,9 @@ function stageForStatusValue(status, fallbackStage = "SAVED") {
   ].includes(status)) return "ASSESSMENT";
   if ([
     "INTERVIEW_INVITED", "INTERVIEW_1", "INTERVIEW_2", "INTERVIEW_COMPLETED",
-    "INTERVIEW_NEXT_ROUND", "INTERVIEW_FINAL", "INTERVIEW_REJECTED", "OFFER",
+    "INTERVIEW_NEXT_ROUND", "INTERVIEW_FINAL", "INTERVIEW_REJECTED",
   ].includes(status)) return "INTERVIEW";
+  if (status === "OFFER") return "OFFER";
   return fallbackStage;
 }
 
@@ -1763,7 +1765,7 @@ function renderJobs() {
       <td><div class="table-date">${escapeHtml(formatDate(job.updated_at || job.apply_time || job.created_at))}</div></td>
       <td>
         <div class="operation-row">
-          ${["SAVED", "ARCHIVED"].includes(job.current_stage) ? "" : `<button class="prep-action-btn" data-action="prep" data-id="${job.id}">${t("prepBtn")}</button>`}
+          ${["SAVED", "OFFER", "ARCHIVED"].includes(job.current_stage) ? "" : `<button class="prep-action-btn" data-action="prep" data-id="${job.id}">${t("prepBtn")}</button>`}
           <button data-action="detail" data-id="${job.id}">${t("detail")}</button>
         </div>
       </td>
@@ -1935,10 +1937,10 @@ function buildSummaryStats() {
   const appliedTotal = appliedJobs.length;
   const appliedRejectedJobs = appliedJobs.filter((job) => job.status === "APPLIED_REJECTED");
   const assessmentTotal = appliedJobs.filter((job) => (
-    job.current_stage === "ASSESSMENT" || job.current_stage === "INTERVIEW"
+    job.current_stage === "ASSESSMENT" || job.current_stage === "INTERVIEW" || job.current_stage === "OFFER"
   )).length;
   const assessmentRejectedJobs = appliedJobs.filter((job) => job.status === "ASSESSMENT_REJECTED");
-  const interviewTotal = appliedJobs.filter((job) => job.current_stage === "INTERVIEW").length;
+  const interviewTotal = appliedJobs.filter((job) => job.current_stage === "INTERVIEW" || job.current_stage === "OFFER").length;
   const interviewRejectedJobs = appliedJobs.filter((job) => job.status === "INTERVIEW_REJECTED");
 
   return {
@@ -3916,7 +3918,7 @@ async function renderJobDetailDialog(job) {
     <section class="job-detail-actions">
       <button type="button" data-detail-action="timeline">${t("timeline")}</button>
       <button type="button" data-detail-action="jd">${t("openJdTitle")}</button>
-      ${["SAVED", "ARCHIVED"].includes(job.current_stage) ? "" : `<button type="button" class="prep-action-btn" data-detail-action="prep">${t("prepBtn")}</button>`}
+      ${["SAVED", "OFFER", "ARCHIVED"].includes(job.current_stage) ? "" : `<button type="button" class="prep-action-btn" data-detail-action="prep">${t("prepBtn")}</button>`}
       <button type="button" data-detail-action="edit">${t("edit")}</button>
       <button type="button" class="danger-button" data-detail-action="delete">${t("delete")}</button>
     </section>
