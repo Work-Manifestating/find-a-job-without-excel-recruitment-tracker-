@@ -985,6 +985,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/jobs/resolve":
             self.resolve_job(parse_qs(parsed.query))
             return
+        if path == "/api/funnel-jobs":
+            self.list_funnel_jobs(parse_qs(parsed.query))
+            return
         if path == "/api/jobs":
             self.list_jobs(parse_qs(parsed.query))
             return
@@ -1194,6 +1197,28 @@ class Handler(BaseHTTPRequestHandler):
         if search:
             jobs = [job for job in jobs if job_matches_search(job, search)]
         self.send_json(jobs)
+
+    def list_funnel_jobs(self, query: dict) -> None:
+        stage = (query.get("stage", [""])[0] or "").strip().upper()
+        if stage not in {"ASSESSMENT", "INTERVIEW"}:
+            self.send_error_json("stage must be ASSESSMENT or INTERVIEW")
+            return
+        sql = """
+            SELECT j.*,
+                   (
+                     SELECT COUNT(*)
+                     FROM timeline_events t
+                     WHERE t.job_application_id = j.id
+                   ) AS timeline_count
+            FROM job_applications j
+            WHERE j.current_stage = ?
+            ORDER BY
+                COALESCE(NULLIF(j.updated_at, ''), NULLIF(j.apply_time, ''), j.created_at) DESC,
+                j.id DESC
+        """
+        with db() as conn:
+            rows = conn.execute(sql, (stage,)).fetchall()
+        self.send_json([row_to_dict(row) for row in rows])
 
     def career_ops_health(self) -> None:
         with db() as conn:

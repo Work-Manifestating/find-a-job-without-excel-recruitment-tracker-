@@ -315,14 +315,20 @@ const I18N = {
     rejectedTotal: "被拒总数",
     sankeyRoot: "全部投递",
     sankeyAssessment: "笔试",
-    sankeyInterview: "面试",
+    sankeyInterview: "进入面试",
     sankeyRejected: "被拒",
     sankeyAppliedActive: "投递中",
+    sankeyAppliedStale: "长期无反应",
     sankeyAssessmentActive: "笔试中",
     sankeyInterviewActive: "面试中",
+    sankeyOffer: "拿到 Offer",
     sankeyRejectedAfterApplied: "投递被拒",
     sankeyRejectedAfterAssessment: "笔试被拒",
     sankeyRejectedAfterInterview: "面试被拒",
+    funnelJobsTitle: "{stage}岗位",
+    funnelJobsLoading: "正在查询岗位…",
+    funnelJobsEmpty: "这个状态下暂时没有岗位。",
+    funnelJobsError: "岗位查询失败，请稍后重试。",
     weeklyReviewPeriod: "本周动态（过去 7 天）",
     applicationHeatmap: "投递热力图",
     applicationHeatmapHint: "从最早投递日期到今天，滚动查看不同月份。",
@@ -348,6 +354,7 @@ const I18N = {
     assessmentRate: "进入笔试率",
     interviewRate: "进入面试率",
     rejectionRate: "被拒率",
+    offerRate: "Offer 率",
     substatusDistrib: "当前状态分布",
     savedStage: "已收藏",
     appliedStage: "已投递（活跃）",
@@ -617,14 +624,20 @@ const I18N = {
     rejectedTotal: "Rejected",
     sankeyRoot: "All applications",
     sankeyAssessment: "Assessment",
-    sankeyInterview: "Interview",
+    sankeyInterview: "Reached interview",
     sankeyRejected: "Rejected",
     sankeyAppliedActive: "Applied active",
+    sankeyAppliedStale: "No response",
     sankeyAssessmentActive: "Assessment active",
     sankeyInterviewActive: "Interview active",
+    sankeyOffer: "Offer received",
     sankeyRejectedAfterApplied: "Application rejected",
     sankeyRejectedAfterAssessment: "Assessment rejected",
     sankeyRejectedAfterInterview: "Interview rejected",
+    funnelJobsTitle: "{stage} roles",
+    funnelJobsLoading: "Loading roles…",
+    funnelJobsEmpty: "No roles are currently in this state.",
+    funnelJobsError: "Could not load roles. Please try again.",
     weeklyReviewPeriod: "This week (past 7 days)",
     applicationHeatmap: "Application heatmap",
     applicationHeatmapHint: "From your first application to today. Scroll to review other months.",
@@ -650,6 +663,7 @@ const I18N = {
     assessmentRate: "Assessment rate",
     interviewRate: "Interview rate",
     rejectionRate: "Rejection rate",
+    offerRate: "Offer rate",
     substatusDistrib: "Current status breakdown",
     savedStage: "Saved",
     appliedStage: "Applied (active)",
@@ -1936,11 +1950,13 @@ function buildSummaryStats() {
   const appliedJobs = allJobs.filter((job) => !["SAVED", "ARCHIVED"].includes(job.current_stage));
   const appliedTotal = appliedJobs.length;
   const appliedRejectedJobs = appliedJobs.filter((job) => job.status === "APPLIED_REJECTED");
+  const appliedStaleJobs = appliedJobs.filter((job) => job.status === "APPLIED_STALE");
   const assessmentTotal = appliedJobs.filter((job) => (
     job.current_stage === "ASSESSMENT" || job.current_stage === "INTERVIEW" || job.current_stage === "OFFER"
   )).length;
   const assessmentRejectedJobs = appliedJobs.filter((job) => job.status === "ASSESSMENT_REJECTED");
   const interviewTotal = appliedJobs.filter((job) => job.current_stage === "INTERVIEW" || job.current_stage === "OFFER").length;
+  const offerTotal = appliedJobs.filter((job) => job.current_stage === "OFFER" || job.status === "OFFER").length;
   const interviewRejectedJobs = appliedJobs.filter((job) => job.status === "INTERVIEW_REJECTED");
 
   return {
@@ -1948,9 +1964,11 @@ function buildSummaryStats() {
     savedTotal,
     appliedTotal,
     appliedRejected: appliedRejectedJobs.length,
+    appliedStale: appliedStaleJobs.length,
     assessmentTotal,
     assessmentRejected: assessmentRejectedJobs.length,
     interviewTotal,
+    offerTotal,
     interviewRejected: interviewRejectedJobs.length,
     rejectedBreakdown: {
       applied: appliedRejectedJobs,
@@ -1958,7 +1976,7 @@ function buildSummaryStats() {
       interview: interviewRejectedJobs,
     },
     activeOrUnknown: Math.max(
-      appliedTotal - appliedRejectedJobs.length - assessmentRejectedJobs.length - interviewRejectedJobs.length,
+      appliedTotal - appliedRejectedJobs.length - assessmentRejectedJobs.length - interviewRejectedJobs.length - offerTotal,
       0
     ),
   };
@@ -2022,12 +2040,12 @@ function sankeyFlow({ source, target, count, total, color, width, title }) {
   `;
 }
 
-function sankeyNode({ x, y, width, height, title, count, total, tone = "" }) {
+function sankeyNode({ x, y, width, height, title, count, total, tone = "", funnelStage = "" }) {
+  const interactive = Boolean(funnelStage);
   return `
-    <g class="sankey-node ${tone}" transform="translate(${x}, ${y})">
+    <g class="sankey-node ${tone} ${interactive ? "is-clickable" : ""}" transform="translate(${x}, ${y})"${interactive ? ` data-funnel-stage="${funnelStage}" tabindex="0" role="button" aria-label="${escapeHtml(title)}"` : ""}>
       <rect width="${width}" height="${height}" rx="6"></rect>
-      <text x="12" y="20">${escapeHtml(title)}</text>
-      <text x="12" y="42" class="node-count">${count} · ${percent(count, total)}</text>
+      <text x="12" y="${Math.round(height / 2)}" dominant-baseline="middle">${escapeHtml(title)} <tspan class="node-count">${percent(count, total)} (${count}/${total})</tspan></text>
     </g>
   `;
 }
@@ -2037,9 +2055,9 @@ function renderSankey(stats) {
   if (total === 0) {
     return `<div class="sankey-card sankey-empty"><p class="muted">投递过的岗位将在这里显示漏斗图。</p></div>`;
   }
-  const appliedActive = Math.max(total - stats.assessmentTotal - stats.appliedRejected, 0);
+  const appliedActive = Math.max(total - stats.assessmentTotal - stats.appliedRejected - stats.appliedStale, 0);
   const assessmentActive = Math.max(stats.assessmentTotal - stats.interviewTotal - stats.assessmentRejected, 0);
-  const interviewActive = Math.max(stats.interviewTotal - stats.interviewRejected, 0);
+  const interviewActive = Math.max(stats.interviewTotal - stats.offerTotal - stats.interviewRejected, 0);
   const scale = 260 / total;
   const nodeWidth = 136;
   const diagram = { width: 900, height: 430, top: 28, bodyHeight: 350 };
@@ -2047,11 +2065,13 @@ function renderSankey(stats) {
     { key: "root", title: t("sankeyRoot"), count: total, x: 34, tone: "root" },
     { key: "assessment", title: t("sankeyAssessment"), count: stats.assessmentTotal, x: 258, tone: "stage" },
     { key: "appliedActive", title: t("sankeyAppliedActive"), count: appliedActive, x: 258, tone: "active" },
+    { key: "appliedStale", title: t("sankeyAppliedStale"), count: stats.appliedStale, x: 258, tone: "stale" },
     { key: "appliedRejected", title: t("sankeyRejectedAfterApplied"), count: stats.appliedRejected, x: 258, tone: "rejected" },
     { key: "interview", title: t("sankeyInterview"), count: stats.interviewTotal, x: 482, tone: "stage" },
-    { key: "assessmentActive", title: t("sankeyAssessmentActive"), count: assessmentActive, x: 482, tone: "active" },
+    { key: "assessmentActive", title: t("sankeyAssessmentActive"), count: assessmentActive, x: 482, tone: "active", funnelStage: "ASSESSMENT" },
     { key: "assessmentRejected", title: t("sankeyRejectedAfterAssessment"), count: stats.assessmentRejected, x: 482, tone: "rejected" },
-    { key: "interviewActive", title: t("sankeyInterviewActive"), count: interviewActive, x: 706, tone: "active" },
+    { key: "offer", title: t("sankeyOffer"), count: stats.offerTotal, x: 706, tone: "offer" },
+    { key: "interviewActive", title: t("sankeyInterviewActive"), count: interviewActive, x: 706, tone: "active", funnelStage: "INTERVIEW" },
     { key: "interviewRejected", title: t("sankeyRejectedAfterInterview"), count: stats.interviewRejected, x: 706, tone: "rejected" },
   ];
   nodes.forEach((node) => {
@@ -2068,10 +2088,12 @@ function renderSankey(stats) {
   const links = [
     { source: "root", target: "assessment", count: stats.assessmentTotal, tone: "stage-flow", title: `${t("enteredAssessment")}: ${stats.assessmentTotal}` },
     { source: "root", target: "appliedActive", count: appliedActive, tone: "active-flow", title: `${t("sankeyAppliedActive")}: ${appliedActive}` },
+    { source: "root", target: "appliedStale", count: stats.appliedStale, tone: "stale-flow", title: `${t("sankeyAppliedStale")}: ${stats.appliedStale}` },
     { source: "root", target: "appliedRejected", count: stats.appliedRejected, tone: "rejected-flow", title: `${t("sankeyRejectedAfterApplied")}: ${stats.appliedRejected}` },
     { source: "assessment", target: "interview", count: stats.interviewTotal, tone: "stage-flow", title: `${t("enteredInterview")}: ${stats.interviewTotal}` },
     { source: "assessment", target: "assessmentActive", count: assessmentActive, tone: "active-flow", title: `${t("sankeyAssessmentActive")}: ${assessmentActive}` },
     { source: "assessment", target: "assessmentRejected", count: stats.assessmentRejected, tone: "rejected-flow", title: `${t("sankeyRejectedAfterAssessment")}: ${stats.assessmentRejected}` },
+    { source: "interview", target: "offer", count: stats.offerTotal, tone: "offer-flow", title: `${t("sankeyOffer")}: ${stats.offerTotal}` },
     { source: "interview", target: "interviewActive", count: interviewActive, tone: "active-flow", title: `${t("sankeyInterviewActive")}: ${interviewActive}` },
     { source: "interview", target: "interviewRejected", count: stats.interviewRejected, tone: "rejected-flow", title: `${t("sankeyRejectedAfterInterview")}: ${stats.interviewRejected}` },
   ].filter((link) => link.count > 0);
@@ -2101,6 +2123,55 @@ function renderSankey(stats) {
   `;
 }
 
+async function openFunnelJobsDrawer(stage) {
+  const drawer = summaryView.querySelector("#funnelJobsDrawer");
+  const layout = summaryView.querySelector(".summary-funnel-layout");
+  if (!drawer || !layout) return;
+  const title = stage === "ASSESSMENT" ? t("sankeyAssessmentActive") : t("sankeyInterviewActive");
+  layout.classList.add("is-drawer-open");
+  drawer.hidden = false;
+  drawer.innerHTML = `
+    <div class="funnel-jobs-drawer-head">
+      <div>
+        <p class="eyebrow">${escapeHtml(t("funnelJobsTitle", { stage: title }))}</p>
+        <h3>${escapeHtml(title)}</h3>
+      </div>
+      <button type="button" class="icon-btn" data-close-funnel-drawer aria-label="Close">×</button>
+    </div>
+    <p class="muted funnel-jobs-loading">${escapeHtml(t("funnelJobsLoading"))}</p>
+  `;
+  try {
+    const jobs = await api(`/api/funnel-jobs?stage=${encodeURIComponent(stage)}`);
+    if (!summaryView.contains(drawer)) return;
+    drawer.querySelector(".funnel-jobs-loading")?.remove();
+    const list = document.createElement("div");
+    list.className = "funnel-jobs-list";
+    list.innerHTML = jobs.length ? jobs.map((job) => `
+      <button type="button" class="funnel-job-item" data-funnel-job-id="${job.id}">
+        <strong>${escapeHtml(job.position_name || "")}</strong>
+        <span>${escapeHtml(job.company_name || "")}</span>
+        <small>${escapeHtml(stageLabelForJob(job))} · ${escapeHtml(statusLabel(job.status))}</small>
+        <small>${escapeHtml(formatDate(job.updated_at || job.apply_time || job.created_at))}</small>
+      </button>
+    `).join("") : `<p class="muted funnel-jobs-empty">${escapeHtml(t("funnelJobsEmpty"))}</p>`;
+    drawer.appendChild(list);
+    list.querySelectorAll("[data-funnel-job-id]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const job = jobs.find((item) => String(item.id) === button.dataset.funnelJobId);
+        if (job) await renderJobDetailDialog(job);
+      });
+    });
+  } catch (error) {
+    drawer.querySelector(".funnel-jobs-loading")?.replaceWith(
+      Object.assign(document.createElement("p"), { className: "muted funnel-jobs-empty", textContent: t("funnelJobsError") })
+    );
+  }
+  drawer.querySelector("[data-close-funnel-drawer]")?.addEventListener("click", () => {
+    drawer.hidden = true;
+    layout.classList.remove("is-drawer-open");
+  });
+}
+
 function renderSummaryView() {
   const stats = buildSummaryStats();
   summary.textContent = t("summaryText", { total: stats.appliedTotal, active: stats.activeOrUnknown });
@@ -2109,13 +2180,14 @@ function renderSummaryView() {
   const appliedJobs = allJobs.filter((j) => !["SAVED", "ARCHIVED"].includes(j.current_stage));
   const appliedBase = appliedJobs.length;
   const totalRejected = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
-  const gotReply = appliedJobs.filter((j) => j.status !== "APPLIED_SUCCESS").length;
+  const gotReply = appliedJobs.filter((j) => !["APPLIED_SUCCESS", "APPLIED_STALE"].includes(j.status)).length;
   const pct = (n, d) => d > 0 ? `${Math.round((n / d) * 100)}%` : "—";
 
   const rateCards = [
     { label: t("responseRate"), value: pct(gotReply, appliedBase), note: `${gotReply}/${appliedBase}` },
     { label: t("assessmentRate"), value: pct(stats.assessmentTotal, appliedBase), note: `${stats.assessmentTotal}/${appliedBase}` },
     { label: t("interviewRate"), value: pct(stats.interviewTotal, appliedBase), note: `${stats.interviewTotal}/${appliedBase}` },
+    { label: t("offerRate"), value: pct(stats.offerTotal, appliedBase), note: `${stats.offerTotal}/${appliedBase}` },
     { label: t("rejectionRate"), value: pct(totalRejected, appliedBase), note: `${totalRejected}/${appliedBase}` },
   ];
 
@@ -2137,7 +2209,10 @@ function renderSummaryView() {
         <p>${t("summaryIntroBody")}</p>
       </div>
 
-      ${renderSankey(stats)}
+      <div class="summary-funnel-layout">
+        <div class="summary-funnel-graphic">${renderSankey(stats)}</div>
+        <aside class="funnel-jobs-drawer" id="funnelJobsDrawer" hidden></aside>
+      </div>
 
       <div class="summary-metrics-grid">
         ${rateCards.map(({ label, value, note }) => `
@@ -2162,6 +2237,16 @@ function renderSummaryView() {
         </div>` : ""}
     </div>
   `;
+  summaryView.querySelectorAll("[data-funnel-stage]").forEach((node) => {
+    const open = () => openFunnelJobsDrawer(node.dataset.funnelStage);
+    node.addEventListener("click", open);
+    node.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        open();
+      }
+    });
+  });
 }
 
 function dateKey(date) {

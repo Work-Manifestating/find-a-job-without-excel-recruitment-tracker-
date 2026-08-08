@@ -1146,6 +1146,14 @@ h3 {
   stroke: #52b788;
 }
 
+.sankey-flow.stale-flow {
+  stroke: #d6a84f;
+}
+
+.sankey-flow.offer-flow {
+  stroke: #2fbf71;
+}
+
 .sankey-flow.rejected-flow {
   stroke: #d94f79;
 }
@@ -1168,6 +1176,14 @@ h3 {
   fill: #d8f3dc;
 }
 
+.sankey-node.stale rect {
+  fill: #fff1c7;
+}
+
+.sankey-node.offer rect {
+  fill: #c8f7dc;
+}
+
 .sankey-node.rejected rect {
   fill: #ffd6e0;
   stroke: #33272a;
@@ -1186,7 +1202,7 @@ h3 {
 
 .sankey-node .node-count {
   fill: var(--muted);
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 800;
 }
 

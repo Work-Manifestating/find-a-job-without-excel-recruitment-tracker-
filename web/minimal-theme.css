@@ -310,8 +310,104 @@ a {
   stroke: #34d399;
 }
 
+.sankey-flow.stale-flow {
+  stroke: #d6a84f;
+}
+
+.sankey-flow.offer-flow {
+  stroke: #10b981;
+}
+
 .sankey-flow.rejected-flow {
   stroke: #f87171;
+}
+
+.summary-funnel-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.summary-funnel-layout.is-drawer-open {
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+}
+
+.summary-funnel-graphic {
+  min-width: 0;
+}
+
+.summary-funnel-graphic .sankey-card {
+  height: 100%;
+}
+
+.sankey-node.is-clickable {
+  cursor: pointer;
+}
+
+.sankey-node.is-clickable:hover rect,
+.sankey-node.is-clickable:focus rect {
+  stroke: var(--accent);
+  stroke-width: 2.4;
+}
+
+.funnel-jobs-drawer {
+  min-height: 250px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+  padding: 14px;
+}
+
+.funnel-jobs-drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.funnel-jobs-drawer-head h3,
+.funnel-jobs-drawer-head p {
+  margin: 0;
+}
+
+.funnel-jobs-list {
+  display: grid;
+  gap: 8px;
+}
+
+.funnel-job-item {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 10px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-tinted);
+}
+
+.funnel-job-item strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.funnel-job-item span,
+.funnel-job-item small {
+  color: var(--muted);
+}
+
+.funnel-jobs-empty {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .summary-funnel-layout.is-drawer-open {
+    grid-template-columns: 1fr;
+  }
 }
 
 .sankey-node rect {
@@ -327,8 +423,25 @@ a {
   fill: #ecfdf5;
 }
 
+.sankey-node.stale rect {
+  fill: #fff7d6;
+}
+
+.sankey-node.offer rect {
+  fill: #d1fae5;
+}
+
 .sankey-node.rejected rect {
   fill: #fef2f2;
+}
+
+.sankey-node text {
+  font-size: 11px;
+}
+
+.sankey-node .node-count {
+  fill: var(--muted);
+  font-size: 10px;
 }
 
 
