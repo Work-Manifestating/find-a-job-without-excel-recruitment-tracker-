@@ -26,6 +26,11 @@ def request(base: str, method: str, path: str, payload: dict | None = None) -> d
         return json.loads(resp.read().decode("utf-8"))
 
 
+def request_bytes(base: str, path: str) -> tuple[str, bytes]:
+    with urllib.request.urlopen(f"{base}{path}", timeout=5) as resp:
+        return resp.headers.get_content_type(), resp.read()
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -34,6 +39,8 @@ def main() -> None:
         server.JOBS_DIR = server.DATA_DIR / "jobs"
         server.RESUMES_DIR = server.DATA_DIR / "resumes"
         server.DB_PATH = server.DATA_DIR / "tracker.db"
+        server.CAREER_OPS_ROOT = root / "career-ops"
+        server.CAREER_OPS_ROOT.mkdir()
         server.init_db()
 
         httpd = ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
@@ -93,6 +100,64 @@ def main() -> None:
             })
             assert isinstance(timeline, list) and len(timeline) >= 1
             assert any(e["event_title"] == "First interview" for e in timeline)
+
+            # ── career-ops integration ───────────────────────────────────────
+            health = request(base, "GET", "/api/integrations/career-ops/health")
+            assert health["ok"] is True
+            assert health["jobs"] == 1
+
+            blocked_cors = urllib.request.Request(
+                f"{base}/api/jobs",
+                method="OPTIONS",
+                headers={"Origin": "https://untrusted.example"},
+            )
+            with urllib.request.urlopen(blocked_cors, timeout=5) as response:
+                assert response.headers.get("Access-Control-Allow-Origin") is None
+
+            allowed_cors = urllib.request.Request(
+                f"{base}/api/jobs",
+                method="OPTIONS",
+                headers={"Origin": "chrome-extension://tracker-test"},
+            )
+            with urllib.request.urlopen(allowed_cors, timeout=5) as response:
+                assert response.headers.get("Access-Control-Allow-Origin") == "chrome-extension://tracker-test"
+
+            resolved = request(
+                base,
+                "GET",
+                "/api/jobs/resolve?company=Smoke%20Co&position=Product%20Analyst",
+            )
+            assert resolved["matched_by"] == "company_position"
+            assert resolved["job"]["id"] == job["id"]
+
+            evaluation = request(base, "POST", f"/api/jobs/{job['id']}/evaluation", {
+                "score": 4.4,
+                "legitimacy": "High Confidence",
+                "recommendation": "Apply",
+                "summary": "Strong analytics fit.",
+                "metadata": {"report_number": 1},
+            })
+            assert evaluation["score"] == 4.4
+            assert evaluation["metadata"]["report_number"] == 1
+
+            report_path = server.CAREER_OPS_ROOT / "reports" / "001-smoke.md"
+            report_path.parent.mkdir()
+            report_path.write_text("# Smoke report\n", encoding="utf-8")
+            artifact = request(base, "POST", f"/api/jobs/{job['id']}/artifacts", {
+                "artifact_type": "evaluation_report",
+                "title": "Smoke evaluation",
+                "local_path": "reports/001-smoke.md",
+                "version": 1,
+            })
+            assert artifact["local_path"] == "reports/001-smoke.md"
+            artifacts = request(base, "GET", f"/api/jobs/{job['id']}/artifacts")
+            assert len(artifacts) == 1
+            content_type, body = request_bytes(base, artifact["file_url"])
+            assert content_type == "text/markdown"
+            assert body == b"# Smoke report\n"
+            prep = request(base, "GET", f"/api/jobs/{job['id']}/prep")
+            assert prep["evaluation"]["score"] == 4.4
+            assert prep["artifacts"][0]["id"] == artifact["id"]
 
             # ── User profile ─────────────────────────────────────────────────
             profile = request(base, "PATCH", "/api/user-profile", {

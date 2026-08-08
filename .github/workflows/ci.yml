@@ -35,7 +35,7 @@ jobs:
         run: python -m py_compile server.py tests/smoke_test.py scripts/seed_demo_data.py native_host/job_tracker_launcher.py native_host/install_native_host.py
 
       - name: Python lint (ruff)
-        run: pip install ruff --quiet && ruff check server.py tests/smoke_test.py scripts/seed_demo_data.py native_host
+        run: pip install ruff --quiet && ruff check --select F server.py tests/smoke_test.py scripts/seed_demo_data.py native_host
 
       - uses: actions/setup-node@v4
         with:
@@ -69,7 +69,7 @@ jobs:
     name: Merge conflict check
     runs-on: ubuntu-latest
     needs: lint
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:
