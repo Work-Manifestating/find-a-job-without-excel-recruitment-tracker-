@@ -48,6 +48,22 @@ http://127.0.0.1:8765
 
 This opens the local dashboard where you can manage your job search.
 
+### Start automatically on macOS
+
+You can register the local server as a macOS background service so you do not need to open Terminal every time:
+
+~~~
+python3 scripts/install_mac_autostart.py
+~~~
+
+After installation, server.py starts automatically when you log in and restarts if it stops. Open http://127.0.0.1:8765 in your browser.
+
+To remove the automatic startup:
+
+~~~
+python3 scripts/install_mac_autostart.py --remove
+~~~
+
 ### 2. Install The Chrome Extension
 
 1. Open `chrome://extensions/`.
