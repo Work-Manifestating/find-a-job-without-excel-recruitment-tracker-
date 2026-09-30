@@ -214,6 +214,7 @@ const I18N = {
     tableMenuDefault: "默认排序",
     tableMenuDeadlineUrgency: "按 DDL 紧急程度排序",
     tableMenuActiveOnly: "只看还在流程中",
+    tableMenuShowAll: "显示全部岗位",
     deadlineEmpty: "选择 Deadline",
     deadlineManual: "手动输入日/月/年",
     deadlineRolling: "roling base",
@@ -325,6 +326,15 @@ const I18N = {
     sankeyRejectedAfterApplied: "投递被拒",
     sankeyRejectedAfterAssessment: "笔试被拒",
     sankeyRejectedAfterInterview: "面试被拒",
+    funnelPeriodAll: "全部",
+    funnelPeriodBeforeSeptember: "九月前",
+    funnelPeriodFromSeptember: "九月后",
+    funnelPeriodLabel: "投递时间范围",
+    funnelAssessmentRounds: "笔试轮次",
+    funnelInterviewRounds: "面试轮次",
+    funnelAssessmentRound: "第{round}轮笔试",
+    funnelInterviewRound: "第{round}轮面试",
+    sankeyEmpty: "该时间段没有投递记录。",
     funnelJobsTitle: "{stage}岗位",
     funnelJobsLoading: "正在查询岗位…",
     funnelJobsEmpty: "这个状态下暂时没有岗位。",
@@ -523,6 +533,7 @@ const I18N = {
     tableMenuDefault: "Default order",
     tableMenuDeadlineUrgency: "Sort by deadline urgency",
     tableMenuActiveOnly: "Active pipeline only",
+    tableMenuShowAll: "Show all roles",
     deadlineEmpty: "Choose deadline",
     deadlineManual: "Enter date manually",
     deadlineRolling: "roling base",
@@ -634,6 +645,15 @@ const I18N = {
     sankeyRejectedAfterApplied: "Application rejected",
     sankeyRejectedAfterAssessment: "Assessment rejected",
     sankeyRejectedAfterInterview: "Interview rejected",
+    funnelPeriodAll: "All",
+    funnelPeriodBeforeSeptember: "Before September",
+    funnelPeriodFromSeptember: "From September",
+    funnelPeriodLabel: "Application period",
+    funnelAssessmentRounds: "Assessment rounds",
+    funnelInterviewRounds: "Interview rounds",
+    funnelAssessmentRound: "Assessment round {round}",
+    funnelInterviewRound: "Interview round {round}",
+    sankeyEmpty: "No applications in this period.",
     funnelJobsTitle: "{stage} roles",
     funnelJobsLoading: "Loading roles…",
     funnelJobsEmpty: "No roles are currently in this state.",
@@ -1012,8 +1032,9 @@ const MODULE_TEXT = {
 
 let jobs = [];
 let allJobs = [];
+let funnelPeriod = "ALL";
 let tableDeadlineSort = "DEFAULT";
-let tableStageFilter = "DEFAULT";
+let tableStageFilter = "ACTIVE";
 let resumeProfiles = [];
 let userProfile = {};
 let questionBankItems = [];
@@ -1325,7 +1346,7 @@ function renderApplicationTableHead() {
   if (stagePopover) {
     stagePopover.innerHTML = `
       <button type="button" data-stage-filter="ACTIVE" class="${tableStageFilter === "ACTIVE" ? "is-selected" : ""}">${t("tableMenuActiveOnly")}</button>
-      <button type="button" data-stage-filter="DEFAULT" class="${tableStageFilter === "DEFAULT" ? "is-selected" : ""}">${t("tableMenuDefault")}</button>
+      <button type="button" data-stage-filter="DEFAULT" class="${tableStageFilter === "DEFAULT" ? "is-selected" : ""}">${t("tableMenuShowAll")}</button>
     `;
   }
   if (deadlinePopover) {
@@ -1739,6 +1760,9 @@ function visibleApplicationJobs() {
   }
   if (tableDeadlineSort === "URGENCY") {
     visible.sort((a, b) => {
+      const aInvited = ["ASSESSMENT_INVITED", "INTERVIEW_INVITED"].includes(a.status);
+      const bInvited = ["ASSESSMENT_INVITED", "INTERVIEW_INVITED"].includes(b.status);
+      if (aInvited !== bInvited) return Number(bInvited) - Number(aInvited);
       const aScore = deadlineUrgencyScore(a);
       const bScore = deadlineUrgencyScore(b);
       if (aScore !== bScore) return aScore - bScore;
@@ -1943,11 +1967,21 @@ function percent(part, total) {
   return `${Math.round((part / total) * 100)}%`;
 }
 
-function buildSummaryStats() {
+const SEPTEMBER_CUTOFF = "2026-09-01";
+
+function matchesFunnelPeriod(job) {
+  if (funnelPeriod === "ALL") return true;
+  const appliedOn = applicationDateKey(job);
+  if (!appliedOn) return false;
+  return funnelPeriod === "BEFORE_SEPTEMBER"
+    ? appliedOn < SEPTEMBER_CUTOFF
+    : appliedOn >= SEPTEMBER_CUTOFF;
+}
+
+function buildSummaryStats(appliedJobs = allJobs.filter((job) => !["SAVED", "ARCHIVED"].includes(job.current_stage))) {
   const total = allJobs.length;
   const savedTotal = allJobs.filter((job) => job.current_stage === "SAVED").length;
   // Sankey / funnel only counts jobs that have been submitted (not saved or archived)
-  const appliedJobs = allJobs.filter((job) => !["SAVED", "ARCHIVED"].includes(job.current_stage));
   const appliedTotal = appliedJobs.length;
   const appliedRejectedJobs = appliedJobs.filter((job) => job.status === "APPLIED_REJECTED");
   const appliedStaleJobs = appliedJobs.filter((job) => job.status === "APPLIED_STALE");
@@ -2050,10 +2084,69 @@ function sankeyNode({ x, y, width, height, title, count, total, tone = "", funne
   `;
 }
 
-function renderSankey(stats) {
+function renderRoundProgression(appliedJobs, stage, roundField, headingKey, nodeKey) {
+  const reached = appliedJobs.filter((job) => (
+    stage === "ASSESSMENT"
+      ? ["ASSESSMENT", "INTERVIEW", "OFFER"].includes(job.current_stage)
+      : ["INTERVIEW", "OFFER"].includes(job.current_stage)
+  ));
+  if (!reached.length) return "";
+
+  const maxRound = Math.max(...reached.map((job) => Math.max(1, Number(job[roundField]) || 1)));
+  const scale = 100 / reached.length;
+  const nodeWidth = 186;
+  const nodes = Array.from({ length: maxRound }, (_, index) => {
+    const round = index + 1;
+    const count = reached.filter((job) => Number(job[roundField] || 1) >= round).length;
+    const height = sankeyNodeHeight(count, scale);
+    return {
+      key: `round-${round}`,
+      title: t(nodeKey, { round: String(round) }),
+      count,
+      x: 18 + index * 230,
+      y: Math.round((140 - height) / 2),
+      width: nodeWidth,
+      height,
+      tone: "stage",
+    };
+  });
+  const links = nodes.slice(1).map((node, index) => ({
+    source: nodes[index].key,
+    target: node.key,
+    count: node.count,
+    width: sankeyFlowWidth(node.count, scale),
+    tone: "stage-flow",
+    title: `${node.title}: ${node.count}`,
+  }));
+  initialiseSankeyOffsets(nodes, links);
+  const nodeMap = Object.fromEntries(nodes.map((node) => [node.key, node]));
+  const width = Math.max(860, nodes[nodes.length - 1].x + nodeWidth + 18);
+
+  return `
+    <div class="sankey-round-row">
+      <h3>${t(headingKey)}</h3>
+      <svg class="sankey-round-diagram" viewBox="0 0 ${width} 140" style="min-width: ${width}px" role="img" aria-label="${t(headingKey)}">
+        <g class="sankey-flows">
+          ${links.map((link) => sankeyFlow({
+            source: nodeMap[link.source],
+            target: nodeMap[link.target],
+            count: link.count,
+            total: appliedJobs.length,
+            color: link.tone,
+            width: link.width,
+            title: link.title,
+          })).join("")}
+        </g>
+        ${nodes.map((node) => sankeyNode({ ...node, total: appliedJobs.length })).join("")}
+      </svg>
+    </div>
+  `;
+}
+
+function renderSankey(stats, appliedJobs) {
   const total = stats.appliedTotal; // SAVED jobs are not part of the funnel
   if (total === 0) {
-    return `<div class="sankey-card sankey-empty"><p class="muted">投递过的岗位将在这里显示漏斗图。</p></div>`;
+    return `<div class="sankey-card sankey-empty"><p class="muted">${t("sankeyEmpty")}</p></div>`;
   }
   const appliedActive = Math.max(total - stats.assessmentTotal - stats.appliedRejected - stats.appliedStale, 0);
   const assessmentActive = Math.max(stats.assessmentTotal - stats.interviewTotal - stats.assessmentRejected, 0);
@@ -2119,6 +2212,10 @@ function renderSankey(stats) {
 
         ${nodes.filter((node) => node.count > 0).map((node) => sankeyNode({ ...node, total })).join("")}
       </svg>
+      <div class="sankey-rounds">
+        ${renderRoundProgression(appliedJobs, "ASSESSMENT", "assessment_round", "funnelAssessmentRounds", "funnelAssessmentRound")}
+        ${renderRoundProgression(appliedJobs, "INTERVIEW", "interview_round", "funnelInterviewRounds", "funnelInterviewRound")}
+      </div>
     </div>
   `;
 }
@@ -2141,7 +2238,9 @@ async function openFunnelJobsDrawer(stage) {
     <p class="muted funnel-jobs-loading">${escapeHtml(t("funnelJobsLoading"))}</p>
   `;
   try {
-    const jobs = await api(`/api/funnel-jobs?stage=${encodeURIComponent(stage)}`);
+    const jobs = (await api(`/api/funnel-jobs?stage=${encodeURIComponent(stage)}`))
+      .filter(matchesFunnelPeriod)
+      .filter((job) => !["ASSESSMENT_REJECTED", "INTERVIEW_REJECTED"].includes(job.status));
     if (!summaryView.contains(drawer)) return;
     drawer.querySelector(".funnel-jobs-loading")?.remove();
     const list = document.createElement("div");
@@ -2173,11 +2272,12 @@ async function openFunnelJobsDrawer(stage) {
 }
 
 function renderSummaryView() {
-  const stats = buildSummaryStats();
+  const appliedJobs = allJobs
+    .filter((job) => !["SAVED", "ARCHIVED"].includes(job.current_stage))
+    .filter(matchesFunnelPeriod);
+  const stats = buildSummaryStats(appliedJobs);
   summary.textContent = t("summaryText", { total: stats.appliedTotal, active: stats.activeOrUnknown });
 
-  // Conversion rates are calculated from every submitted role, excluding SAVED and ARCHIVED.
-  const appliedJobs = allJobs.filter((j) => !["SAVED", "ARCHIVED"].includes(j.current_stage));
   const appliedBase = appliedJobs.length;
   const totalRejected = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
   const gotReply = appliedJobs.filter((j) => !["APPLIED_SUCCESS", "APPLIED_STALE"].includes(j.status)).length;
@@ -2209,8 +2309,23 @@ function renderSummaryView() {
         <p>${t("summaryIntroBody")}</p>
       </div>
 
+      <div class="funnel-period-controls" role="group" aria-label="${t("funnelPeriodLabel")}">
+        ${[
+          ["ALL", "funnelPeriodAll"],
+          ["BEFORE_SEPTEMBER", "funnelPeriodBeforeSeptember"],
+          ["FROM_SEPTEMBER", "funnelPeriodFromSeptember"],
+        ].map(([period, label]) => `
+          <button type="button" data-funnel-period="${period}"
+            class="${funnelPeriod === period ? "is-selected" : ""}"
+            aria-pressed="${funnelPeriod === period}"
+            title="${period === "ALL" ? t("funnelPeriodAll") : period === "BEFORE_SEPTEMBER" ? "< 2026-09-01" : "≥ 2026-09-01"}">
+            ${t(label)}
+          </button>
+        `).join("")}
+      </div>
+
       <div class="summary-funnel-layout">
-        <div class="summary-funnel-graphic">${renderSankey(stats)}</div>
+        <div class="summary-funnel-graphic">${renderSankey(stats, appliedJobs)}</div>
         <aside class="funnel-jobs-drawer" id="funnelJobsDrawer" hidden></aside>
       </div>
 
@@ -2237,6 +2352,12 @@ function renderSummaryView() {
         </div>` : ""}
     </div>
   `;
+  summaryView.querySelectorAll("[data-funnel-period]").forEach((button) => {
+    button.addEventListener("click", () => {
+      funnelPeriod = button.dataset.funnelPeriod;
+      renderSummaryView();
+    });
+  });
   summaryView.querySelectorAll("[data-funnel-stage]").forEach((node) => {
     const open = () => openFunnelJobsDrawer(node.dataset.funnelStage);
     node.addEventListener("click", open);
