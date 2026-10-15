@@ -213,13 +213,15 @@ const I18N = {
     tableDeadline: "Deadline",
     tableMenuDefault: "默认排序",
     tableMenuDeadlineUrgency: "按 DDL 紧急程度排序",
-    tableMenuActiveOnly: "只看还在流程中",
+    tableMenuActiveOnly: "流程中",
+    tableMenuSavedOnly: "收藏中",
     tableMenuShowAll: "显示全部岗位",
     deadlineEmpty: "选择 Deadline",
-    deadlineManual: "手动输入日/月/年",
+    deadlineManual: "选择日期",
     deadlineRolling: "roling base",
     deadlineDatePrompt: "请输入 deadline（日/月/年）",
     tableUpdated: "更新",
+    tableAppliedDate: "申请日期",
     tableActions: "操作",
     emptyJobs: "还没有岗位，先新增一条。",
     jobsCount: "{count} 个岗位",
@@ -532,13 +534,15 @@ const I18N = {
     tableDeadline: "Deadline",
     tableMenuDefault: "Default order",
     tableMenuDeadlineUrgency: "Sort by deadline urgency",
-    tableMenuActiveOnly: "Active pipeline only",
+    tableMenuActiveOnly: "In progress",
+    tableMenuSavedOnly: "Saved",
     tableMenuShowAll: "Show all roles",
     deadlineEmpty: "Choose deadline",
-    deadlineManual: "Enter date manually",
+    deadlineManual: "Choose date",
     deadlineRolling: "roling base",
     deadlineDatePrompt: "Enter deadline (day/month/year)",
     tableUpdated: "Updated",
+    tableAppliedDate: "Applied",
     tableActions: "Actions",
     emptyJobs: "No applications yet. Add the first one.",
     jobsCount: "{count} jobs",
@@ -1307,14 +1311,62 @@ function deadlineMode(deadline) {
 function deadlineSelectHtml(job) {
   const selected = deadlineMode(job.deadline);
   const manualDeadline = job.deadline && selected === DEADLINE_MANUAL_VALUE ? job.deadline : "";
+  const displayDeadline = selected === DEADLINE_ROLLING_VALUE
+    ? t("deadlineRolling")
+    : manualDeadline ? formatDate(manualDeadline) : "dd/mm/yyyy";
   return `
-    <select class="inline-deadline" data-action="deadline" data-id="${job.id}">
-      ${job.deadline ? "" : `<option value="" selected>${t("deadlineEmpty")}</option>`}
-      ${manualDeadline ? `<option value="${escapeHtml(manualDeadline)}" selected>${escapeHtml(manualDeadline)}</option>` : ""}
-      <option value="${DEADLINE_MANUAL_VALUE}" ${job.deadline && !manualDeadline && selected === DEADLINE_MANUAL_VALUE ? "selected" : ""}>${t("deadlineManual")}</option>
-      <option value="${DEADLINE_ROLLING_VALUE}" ${selected === DEADLINE_ROLLING_VALUE ? "selected" : ""}>${t("deadlineRolling")}</option>
-    </select>
+    <div class="inline-deadline-control">
+      <button class="deadline-date-trigger ${job.deadline ? "has-value" : ""}" type="button" data-action="deadline-calendar" data-id="${job.id}">${escapeHtml(displayDeadline)}</button>
+      <button class="deadline-calendar-icon" type="button" data-action="deadline-calendar" data-id="${job.id}" aria-label="${t("deadlineManual")}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3m10-3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v12H4V7a2 2 0 0 1 2-2Z"/></svg>
+      </button>
+      <div class="deadline-calendar-popover" data-deadline-calendar="${job.id}" hidden></div>
+    </div>
   `;
+}
+
+function renderDeadlineCalendar(control, job, monthDate = null) {
+  const selectedDate = parseDeadlineDate(job.deadline);
+  const baseDate = monthDate || selectedDate || new Date();
+  const year = baseDate.getFullYear();
+  const month = baseDate.getMonth();
+  const first = new Date(year, month, 1);
+  const mondayOffset = (first.getDay() + 6) % 7;
+  const gridStart = new Date(year, month, 1 - mondayOffset);
+  const selectedKey = selectedDate ? dateKey(selectedDate) : "";
+  const todayKey = dateKey(new Date());
+  const weekdays = currentLang === "zh"
+    ? ["一", "二", "三", "四", "五", "六", "日"]
+    : ["M", "T", "W", "T", "F", "S", "S"];
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const day = addDays(gridStart, index);
+    const key = dateKey(day);
+    const classes = [
+      day.getMonth() !== month ? "is-outside" : "",
+      key === selectedKey ? "is-selected" : "",
+      key === todayKey ? "is-today" : "",
+    ].filter(Boolean).join(" ");
+    return `<button type="button" class="${classes}" data-deadline-day="${key}">${day.getDate()}</button>`;
+  }).join("");
+
+  control.innerHTML = `
+    <div class="deadline-calendar-header">
+      <strong>${baseDate.toLocaleDateString(currentLang === "zh" ? "zh-CN" : "en-GB", { month: "long", year: "numeric" })}</strong>
+      <div>
+        <button type="button" data-deadline-month="-1" aria-label="Previous month">↑</button>
+        <button type="button" data-deadline-month="1" aria-label="Next month">↓</button>
+      </div>
+    </div>
+    <div class="deadline-calendar-weekdays">${weekdays.map((day) => `<span>${day}</span>`).join("")}</div>
+    <div class="deadline-calendar-days">${days}</div>
+    <div class="deadline-calendar-footer">
+      <button type="button" data-deadline-choice="clear">Clear</button>
+      <button type="button" data-deadline-choice="rolling">rolling base</button>
+      <button type="button" data-deadline-choice="today">Today</button>
+    </div>
+  `;
+  control.dataset.year = String(year);
+  control.dataset.month = String(month);
 }
 
 function tableHeaderMenu(label, menuKey, active) {
@@ -1336,7 +1388,7 @@ function renderApplicationTableHead() {
       <th>${tableHeaderMenu(t("tableStage"), "stage", tableStageFilter !== "DEFAULT")}</th>
       <th><span>${t("tableNextAction")}</span></th>
       <th>${tableHeaderMenu(t("tableDeadline"), "deadline", tableDeadlineSort !== "DEFAULT")}</th>
-      <th><span>${t("tableUpdated")}</span></th>
+      <th><span>${t("tableAppliedDate")}</span></th>
       <th><span>${t("tableActions")}</span></th>
     </tr>
   `;
@@ -1346,6 +1398,7 @@ function renderApplicationTableHead() {
   if (stagePopover) {
     stagePopover.innerHTML = `
       <button type="button" data-stage-filter="ACTIVE" class="${tableStageFilter === "ACTIVE" ? "is-selected" : ""}">${t("tableMenuActiveOnly")}</button>
+      <button type="button" data-stage-filter="SAVED" class="${tableStageFilter === "SAVED" ? "is-selected" : ""}">${t("tableMenuSavedOnly")}</button>
       <button type="button" data-stage-filter="DEFAULT" class="${tableStageFilter === "DEFAULT" ? "is-selected" : ""}">${t("tableMenuShowAll")}</button>
     `;
   }
@@ -1387,7 +1440,7 @@ function formatDate(value) {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString([], {
+  return date.toLocaleDateString("en-GB", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -1757,6 +1810,8 @@ function visibleApplicationJobs() {
   let visible = [...allJobs];
   if (tableStageFilter === "ACTIVE") {
     visible = visible.filter(isActivePipelineJob);
+  } else if (tableStageFilter === "SAVED") {
+    visible = visible.filter((job) => job.current_stage === "SAVED" && !isArchived(job));
   }
   if (tableDeadlineSort === "URGENCY") {
     visible.sort((a, b) => {
@@ -1800,7 +1855,7 @@ function renderJobs() {
       <td>
         ${deadlineSelectHtml(job)}
       </td>
-      <td><div class="table-date">${escapeHtml(formatDate(job.updated_at || job.apply_time || job.created_at))}</div></td>
+      <td><div class="table-date">${job.applied_stage_date || job.apply_time ? escapeHtml(formatDate(job.applied_stage_date || job.apply_time)) : "—"}</div></td>
       <td>
         <div class="operation-row">
           ${["SAVED", "OFFER", "ARCHIVED"].includes(job.current_stage) ? "" : `<button class="prep-action-btn" data-action="prep" data-id="${job.id}">${t("prepBtn")}</button>`}
@@ -1857,22 +1912,40 @@ function renderJobs() {
     });
   });
 
-  jobsTable.querySelectorAll("[data-action='deadline']").forEach((select) => {
-    select.addEventListener("change", async () => {
-      const job = jobs.find((item) => String(item.id) === select.dataset.id);
+  jobsTable.querySelectorAll("[data-action='deadline-calendar']").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const job = jobs.find((item) => String(item.id) === button.dataset.id);
+      const calendar = button.closest(".inline-deadline-control")?.querySelector(".deadline-calendar-popover");
+      if (!job || !calendar) return;
+      jobsTable.querySelectorAll(".deadline-calendar-popover").forEach((other) => {
+        if (other !== calendar) other.hidden = true;
+      });
+      calendar.hidden = !calendar.hidden;
+      if (!calendar.hidden) renderDeadlineCalendar(calendar, job);
+    });
+  });
+
+  jobsTable.querySelectorAll(".deadline-calendar-popover").forEach((calendar) => {
+    calendar.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const job = jobs.find((item) => String(item.id) === calendar.dataset.deadlineCalendar);
       if (!job) return;
-      let nextDeadline = select.value;
-      if (!nextDeadline) return;
-      if (nextDeadline === DEADLINE_MANUAL_VALUE) {
-        const value = window.prompt(t("deadlineDatePrompt"), deadlineMode(job.deadline) === DEADLINE_MANUAL_VALUE ? job.deadline || "" : "");
-        if (!value || !value.trim()) {
-          select.value = job.deadline || "";
-          return;
-        }
-        nextDeadline = value.trim();
+      const monthButton = event.target.closest("[data-deadline-month]");
+      if (monthButton) {
+        const nextMonth = new Date(Number(calendar.dataset.year), Number(calendar.dataset.month) + Number(monthButton.dataset.deadlineMonth), 1);
+        renderDeadlineCalendar(calendar, job, nextMonth);
+        return;
       }
-      if (nextDeadline === (job.deadline || "")) return;
-      await patchJobFromInline(job, { deadline: nextDeadline });
+      const dayButton = event.target.closest("[data-deadline-day]");
+      if (dayButton) {
+        await patchJobFromInline(job, { deadline: dayButton.dataset.deadlineDay });
+        return;
+      }
+      const choice = event.target.closest("[data-deadline-choice]")?.dataset.deadlineChoice;
+      if (choice === "clear") await patchJobFromInline(job, { deadline: "" });
+      if (choice === "rolling") await patchJobFromInline(job, { deadline: DEADLINE_ROLLING_VALUE });
+      if (choice === "today") await patchJobFromInline(job, { deadline: dateKey(new Date()) });
     });
   });
 
@@ -4295,10 +4368,16 @@ searchInput.addEventListener("input", () => {
 });
 
 document.addEventListener("click", (event) => {
-  if (event.target.closest(".table-head-menu")) return;
-  applicationsTableHead.querySelectorAll("[data-table-popover]").forEach((popover) => {
-    popover.hidden = true;
-  });
+  if (!event.target.closest(".table-head-menu")) {
+    applicationsTableHead.querySelectorAll("[data-table-popover]").forEach((popover) => {
+      popover.hidden = true;
+    });
+  }
+  if (!event.target.closest(".inline-deadline-control")) {
+    jobsTable.querySelectorAll(".deadline-calendar-popover").forEach((calendar) => {
+      calendar.hidden = true;
+    });
+  }
 });
 
 stageSelect.addEventListener("change", () => {

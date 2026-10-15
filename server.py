@@ -1178,7 +1178,16 @@ class Handler(BaseHTTPRequestHandler):
                      SELECT COUNT(*)
                      FROM timeline_events t
                      WHERE t.job_application_id = j.id
-                   ) AS timeline_count
+                   ) AS timeline_count,
+                   (
+                     SELECT MIN(t.event_time)
+                     FROM timeline_events t
+                     WHERE t.job_application_id = j.id
+                       AND (
+                         t.event_type = 'APPLIED'
+                         OR (t.event_type = 'STATUS_CHANGE' AND t.event_title LIKE '阶段更新为 APPLIED%')
+                       )
+                   ) AS applied_stage_date
             FROM job_applications j
             WHERE 1 = 1
         """
@@ -1614,6 +1623,8 @@ class Handler(BaseHTTPRequestHandler):
             if not existing:
                 self.send_error_json("Job not found", HTTPStatus.NOT_FOUND)
                 return
+            if updates.get("current_stage") == "APPLIED" and existing["current_stage"] != "APPLIED" and not updates.get("apply_time"):
+                updates["apply_time"] = updates["updated_at"]
             if updates.get("status") == ASSESSMENT_NEXT_ROUND_STATUS:
                 updates["assessment_round"] = max(int(existing["assessment_round"] or 1) + 1, 2)
                 updates["status"] = ASSESSMENT_INVITED_STATUS
