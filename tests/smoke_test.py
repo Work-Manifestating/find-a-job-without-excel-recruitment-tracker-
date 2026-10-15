@@ -92,6 +92,33 @@ def main() -> None:
             searched_jobs = request(base, "GET", "/api/jobs?q=tracker%20note")
             assert len(searched_jobs) == 1 and searched_jobs[0]["id"] == job["id"]
 
+            applied_job = request(base, "POST", "/api/jobs", {
+                "company_name": "Applied Co",
+                "position_name": "Engineer",
+                "current_stage": "SAVED",
+                "status": "SAVED",
+            })
+            transitioned = request(base, "PATCH", f"/api/jobs/{applied_job['id']}", {
+                "current_stage": "APPLIED",
+                "status": "APPLIED_SUCCESS",
+                "apply_time": "",
+            })
+            assert transitioned["apply_time"]
+            listed = request(base, "GET", "/api/jobs")
+            applied_row = next(item for item in listed if item["id"] == applied_job["id"])
+            assert applied_row["applied_stage_date"] == transitioned["apply_time"]
+            with server.db() as conn:
+                conn.execute("UPDATE job_applications SET apply_time = '' WHERE id = ?", (applied_job["id"],))
+            listed_without_apply_time = request(base, "GET", "/api/jobs")
+            legacy_row = next(item for item in listed_without_apply_time if item["id"] == applied_job["id"])
+            assert legacy_row["apply_time"] == ""
+            assert legacy_row["applied_stage_date"] == applied_row["applied_stage_date"]
+            request(base, "PATCH", f"/api/jobs/{applied_job['id']}", {"status": "APPLIED_STALE"})
+            listed = request(base, "GET", "/api/jobs")
+            applied_row_after = next(item for item in listed if item["id"] == applied_job["id"])
+            assert applied_row_after["applied_stage_date"] == applied_row["applied_stage_date"]
+            request(base, "DELETE", f"/api/jobs/{applied_job['id']}")
+
             # ── Timeline ─────────────────────────────────────────────────────
             timeline = request(base, "POST", f"/api/jobs/{job['id']}/timeline", {
                 "event_title": "First interview",
