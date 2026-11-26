@@ -191,6 +191,8 @@ def apply_transition_status(stage: str, status: str) -> tuple[str, str]:
         return "APPLIED", APPLIED_WAITING_STATUS
     if status == SAVED_NOT_APPLY_STATUS:
         return "ARCHIVED", "ARCHIVED"
+    if status == INTERVIEW_OFFER_STATUS:
+        return "OFFER", status
     return stage, status
 
 
@@ -466,6 +468,8 @@ def init_db() -> None:
             WHERE status = 'SAVED_NOT_APPLY'
             """
         )
+        # An offer always lives in the OFFER stage (older rows kept the INTERVIEW stage).
+        conn.execute("UPDATE job_applications SET current_stage = 'OFFER' WHERE status = 'OFFER'")
         # Offers whose next action was left on an in-progress step (e.g. PREPARE) from before the offer.
         conn.execute(
             """
@@ -1210,7 +1214,18 @@ class Handler(BaseHTTPRequestHandler):
                          t.event_type = 'APPLIED'
                          OR (t.event_type = 'STATUS_CHANGE' AND t.event_title LIKE '阶段更新为 APPLIED%')
                        )
-                   ) AS applied_stage_date
+                   ) AS applied_stage_date,
+                   (
+                     -- Did this job ever enter the assessment stage? (Some go straight from applied to interview.)
+                     j.current_stage = 'ASSESSMENT'
+                     OR EXISTS (
+                       SELECT 1
+                       FROM timeline_events t
+                       WHERE t.job_application_id = j.id
+                         AND t.event_type = 'STATUS_CHANGE'
+                         AND t.event_title LIKE '%ASSESSMENT%'
+                     )
+                   ) AS had_assessment
             FROM job_applications j
             WHERE 1 = 1
         """

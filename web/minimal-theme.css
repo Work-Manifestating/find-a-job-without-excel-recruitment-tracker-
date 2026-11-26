@@ -303,27 +303,9 @@ a {
   opacity: 0.45;
 }
 
-.sankey-rounds {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-}
 
-.sankey-round-row + .sankey-round-row {
-  margin-top: 10px;
-}
 
-.sankey-round-row h3 {
-  margin: 0 0 2px;
-  font-size: 13px;
-  font-weight: 650;
-}
 
-.sankey-round-diagram {
-  display: block;
-  width: 100%;
-  height: auto;
-}
 
 
 .sankey-flow.stage-flow {
@@ -354,32 +336,12 @@ a {
 }
 
 .funnel-period-controls {
-  display: inline-flex;
-  width: fit-content;
+  display: flex;
   max-width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  overflow: hidden;
-  background: var(--panel);
 }
 
-.funnel-period-controls button {
-  min-height: 34px;
-  border: 0;
-  border-radius: 0;
-  padding: 6px 14px;
-  white-space: nowrap;
-  font-size: 12px;
-}
 
-.funnel-period-controls button + button {
-  border-left: 1px solid var(--line);
-}
 
-.funnel-period-controls button.is-selected {
-  background: var(--accent-soft);
-  color: var(--accent-dark);
-}
 
 .summary-funnel-layout.is-drawer-open {
   grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
@@ -713,4 +675,60 @@ a {
 /* Date picker floats above the table (positioned in JS) so it never gets clipped. */
 .deadline-calendar-popover {
   z-index: 900;
+}
+
+/* ── Funnel: one colour per state, shared by nodes and the ribbons flowing into them ── */
+.sankey-diagram {
+  min-width: 860px;
+  width: 100%;
+  height: auto;
+}
+
+.sankey-card {
+  overflow-x: auto;
+}
+
+.sankey-note {
+  margin: 8px 4px 0;
+  font-size: 12px;
+}
+
+.sankey-node.root rect { fill: #9d948f; }
+.sankey-node.stage rect { fill: #3d8ec9; }
+.sankey-node.active rect { fill: #8b6fd6; }
+.sankey-node.waiting rect { fill: #3fa7b5; }
+.sankey-node.stale rect { fill: #e5a34b; }
+.sankey-node.rejected rect { fill: #df5656; }
+.sankey-node.offer rect { fill: #2e9e5b; }
+
+.sankey-flow.stage-flow { stroke: #3d8ec9; }
+.sankey-flow.active-flow { stroke: #8b6fd6; }
+.sankey-flow.waiting-flow { stroke: #3fa7b5; }
+.sankey-flow.stale-flow { stroke: #e5a34b; }
+.sankey-flow.rejected-flow { stroke: #df5656; }
+.sankey-flow.offer-flow { stroke: #2e9e5b; }
+
+.sankey-flow {
+  opacity: 0.32;
+}
+
+.sankey-flow:hover {
+  opacity: 0.55;
+}
+
+.summary-metrics-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 720px) {
+  .summary-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.sankey-node text.is-below {
+  paint-order: stroke;
+  stroke: var(--panel);
+  stroke-width: 4px;
+  stroke-linejoin: round;
 }

@@ -2361,53 +2361,12 @@ dialog {
 }
 
 /* ── Summary view: substatus distribution ── */
-.summary-distrib {
-  border: 2px solid #33272a;
-  border-radius: var(--radius);
-  background: var(--panel);
-  box-shadow: 4px 4px 0 #33272a;
-  padding: 16px;
-}
 
-.summary-distrib-title {
-  margin: 0 0 14px;
-  font-size: 14px;
-}
 
-.summary-distrib-row {
-  display: grid;
-  grid-template-columns: 160px 1fr 32px;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
 
-.summary-distrib-label {
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
-.summary-distrib-bar-wrap {
-  height: 10px;
-  background: var(--border);
-  border-radius: 5px;
-  overflow: hidden;
-}
 
-.summary-distrib-bar {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 5px;
-  transition: width 0.3s;
-}
 
-.summary-distrib-count {
-  font-size: 12px;
-  color: var(--muted);
-  text-align: right;
-}
 
 /* ── Interview Prep Dialog ── */
 .prep-dialog {
@@ -3132,7 +3091,6 @@ dialog * {
 .summary-intro,
 .summary-metrics div,
 .summary-metric-card,
-.summary-distrib,
 .sankey-card,
 .personal-info-panel,
 .profile-card,
@@ -3150,7 +3108,6 @@ dialog {
 .weekly-section,
 .summary-intro,
 .summary-metric-card,
-.summary-distrib,
 .personal-info-panel,
 .profile-card,
 .prepare-tabs {
@@ -3416,10 +3373,6 @@ tbody tr:hover td {
   .summary-metrics,
   .summary-metrics-grid {
     grid-template-columns: 1fr;
-  }
-
-  .summary-distrib-row {
-    grid-template-columns: 120px 1fr 28px;
   }
 
   .dashboard-grid,

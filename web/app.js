@@ -154,7 +154,7 @@ const I18N = {
     prepareSummary: "把申请题、面试故事、公司笔记和简历档案集中在这里准备。",
     dashboard: "主控台",
     dashboardSummary: "先看总览，再进入左侧详细页面处理具体任务。",
-    dashboardActive: "仍在流程",
+    dashboardActive: "仍在推进",
     dashboardRejected: "已被拒",
     dashboardAssessments: "进入笔试",
     dashboardInterviews: "进入面试",
@@ -189,7 +189,7 @@ const I18N = {
     prepare: "准备材料",
     summarize: "漏斗分析",
     summaryIntroTitle: "这页看什么",
-    summaryIntroBody: "这里不是写复盘的地方，而是看投递漏斗：已投递岗位里有多少进入笔试、面试、被拒，以及哪些子状态占比最高。收藏岗位不会计入漏斗。",
+    summaryIntroBody: "看已投递的岗位一路走到了哪一步：进入笔试、面试、拿到 Offer，或在哪一步被拒。点任意节点可以查看对应岗位。",
     weeklyReview: "每周复盘",
     questionBank: "申请题答案库",
     interviewStories: "面试故事库",
@@ -333,48 +333,47 @@ const I18N = {
     customStatusPrompt: "请输入自定义子状态",
     deleteJobConfirm: "确认删除这个岗位吗？\n\n{job}\n\n删除后会同时删除本地保存的 JD 文件夹。",
     deleteProfileConfirm: "确认删除这个简历档案吗？\n\n{name}\n\n删除后会同时删除本地简历文件。",
-    summaryText: "{total} 个岗位 · {active} 个仍在流程内",
-    totalApplied: "全部投递",
+    summaryText: "已投递 {total} 个 · {active} 个仍在推进",
+    totalApplied: "已投递",
     enteredAssessment: "进入笔试",
     enteredInterview: "进入面试",
     rejectedTotal: "被拒总数",
-    sankeyRoot: "全部投递",
-    sankeyAssessment: "笔试",
-    sankeyInterview: "进入面试",
-    sankeyRejected: "被拒",
-    sankeyAppliedActive: "投递中",
+    sankeyRoot: "已投递",
+    sankeyAppliedActive: "投递中 · 等回复",
     sankeyAppliedStale: "长期无反应",
-    sankeyAssessmentActive: "笔试中",
-    sankeyInterviewActive: "面试中",
     sankeyOffer: "拿到 Offer",
     sankeyRejectedAfterApplied: "投递被拒",
-    sankeyRejectedAfterAssessment: "笔试被拒",
-    sankeyRejectedAfterInterview: "面试被拒",
     funnelPeriodAll: "全部",
-    funnelPeriodBeforeSeptember: "九月前",
-    funnelPeriodFromSeptember: "九月后",
+    funnelPeriodBeforeSeptember: "Previous",
+    funnelPeriodFromSeptember: "Current",
     funnelPeriodLabel: "投递时间范围",
-    funnelAssessmentRounds: "笔试轮次",
-    funnelInterviewRounds: "面试轮次",
     funnelAssessmentRound: "第{round}轮笔试",
     funnelInterviewRound: "第{round}轮面试",
     funnelAssessmentRoundRejected: "第{round}轮笔试被拒",
     funnelInterviewRoundRejected: "第{round}轮面试被拒",
     funnelAssessmentRoundActive: "第{round}轮笔试进行中",
     funnelInterviewRoundActive: "第{round}轮面试进行中",
-    funnelAssessmentRoundWaiting: "第{round}轮笔试已完成 · 等通知",
+    funnelAssessmentRoundWaiting: "第{round}轮笔试 / 测评已完成 · 等通知",
     funnelInterviewRoundWaiting: "第{round}轮面试已完成 · 等通知",
     sankeyEmpty: "该时间段没有投递记录。",
-    funnelJobsTitle: "{stage}岗位",
-    funnelJobsLoading: "正在查询岗位…",
-    funnelJobsEmpty: "这个状态下暂时没有岗位。",
-    funnelJobsError: "岗位查询失败，请稍后重试。",
     funnelRoundReached: "到达过这一轮",
     funnelRoundActive: "本轮进行中",
     funnelRoundWaiting: "本轮已完成 · 等通知",
     funnelRoundPassed: "已通过本轮",
     funnelRoundRejected: "本轮被拒",
     funnelJobsCount: "{count} 个岗位",
+    funnelLeafActive: "进行中",
+    funnelLeafWaiting: "已完成 · 等通知",
+    funnelLeafRejected: "被拒",
+    funnelDirectInterview: "跳过笔试，直接进入面试",
+    funnelShareOfApplied: "占已投递 {percent}",
+    funnelPrevStepShare: "占上一步 {percent}",
+    funnelPercentNote: "百分比 = 占已投递（{total} 个）的比例。鼠标悬停节点可看占上一步的比例，点击可查看岗位。",
+    funnelExcludedNote: "另有 {count} 个收藏或已归档、还没投递的岗位，不计入漏斗。",
+    rateReply: "投递 → 获得回复",
+    rateAssessmentToInterview: "笔试 → 面试",
+    rateInterviewToOffer: "面试 → Offer",
+    rateRejected: "整体被拒",
     weeklyReviewPeriod: "本周动态（过去 7 天）",
     applicationHeatmap: "投递热力图",
     applicationHeatmapHint: "从最早投递日期到今天，滚动查看不同月份。",
@@ -396,12 +395,6 @@ const I18N = {
     lastUpdated: "最后更新",
     followUpUrgent: "紧急",
     conversionRates: "转化率",
-    responseRate: "获得回复率",
-    assessmentRate: "进入笔试率",
-    interviewRate: "进入面试率",
-    rejectionRate: "被拒率",
-    offerRate: "Offer 率",
-    substatusDistrib: "当前状态分布",
     savedStage: "已收藏",
     appliedStage: "已投递（活跃）",
     addQuestion: "+ 新增问题",
@@ -506,7 +499,7 @@ const I18N = {
     prepareSummary: "Prepare question answers, interview stories, company notes, and resume profiles in one place.",
     dashboard: "Main Dashboard",
     dashboardSummary: "Start with the overview, then use the left index for detailed work.",
-    dashboardActive: "Still active",
+    dashboardActive: "Still progressing",
     dashboardRejected: "Rejected",
     dashboardAssessments: "Reached assessment",
     dashboardInterviews: "Reached interview",
@@ -541,7 +534,7 @@ const I18N = {
     prepare: "Prepare",
     summarize: "Funnel Analysis",
     summaryIntroTitle: "What this page is for",
-    summaryIntroBody: "This is not a reflection page. It shows your application funnel: how submitted roles move into assessments, interviews, rejections, and which sub-statuses dominate. Saved roles are excluded.",
+    summaryIntroBody: "See how far each submitted application got: assessment, interview, offer, or where it was rejected. Click any node to see its roles.",
     weeklyReview: "Weekly Review",
     questionBank: "Question Bank",
     interviewStories: "Interview Stories",
@@ -685,48 +678,47 @@ const I18N = {
     customStatusPrompt: "Enter a custom sub-status",
     deleteJobConfirm: "Delete this job?\n\n{job}\n\nThis will also delete the saved local JD folder.",
     deleteProfileConfirm: "Delete this Resume Profile?\n\n{name}\n\nThis will also delete the local resume file.",
-    summaryText: "{total} jobs · {active} still active",
-    totalApplied: "All applications",
+    summaryText: "{total} submitted · {active} still progressing",
+    totalApplied: "Submitted",
     enteredAssessment: "Reached assessment",
     enteredInterview: "Reached interview",
     rejectedTotal: "Rejected",
-    sankeyRoot: "All applications",
-    sankeyAssessment: "Assessment",
-    sankeyInterview: "Reached interview",
-    sankeyRejected: "Rejected",
-    sankeyAppliedActive: "Applied active",
+    sankeyRoot: "Submitted",
+    sankeyAppliedActive: "Applied, awaiting reply",
     sankeyAppliedStale: "No response",
-    sankeyAssessmentActive: "Assessment active",
-    sankeyInterviewActive: "Interview active",
     sankeyOffer: "Offer received",
     sankeyRejectedAfterApplied: "Application rejected",
-    sankeyRejectedAfterAssessment: "Assessment rejected",
-    sankeyRejectedAfterInterview: "Interview rejected",
     funnelPeriodAll: "All",
-    funnelPeriodBeforeSeptember: "Before September",
-    funnelPeriodFromSeptember: "From September",
+    funnelPeriodBeforeSeptember: "Previous",
+    funnelPeriodFromSeptember: "Current",
     funnelPeriodLabel: "Application period",
-    funnelAssessmentRounds: "Assessment rounds",
-    funnelInterviewRounds: "Interview rounds",
     funnelAssessmentRound: "Assessment round {round}",
     funnelInterviewRound: "Interview round {round}",
     funnelAssessmentRoundRejected: "Rejected after assessment {round}",
     funnelInterviewRoundRejected: "Rejected after interview {round}",
     funnelAssessmentRoundActive: "Assessment round {round}: in progress",
     funnelInterviewRoundActive: "Interview round {round}: in progress",
-    funnelAssessmentRoundWaiting: "Assessment round {round}: completed, waiting",
+    funnelAssessmentRoundWaiting: "Assessment round {round} (incl. pre-interview): done, waiting",
     funnelInterviewRoundWaiting: "Interview round {round}: completed, waiting",
     sankeyEmpty: "No applications in this period.",
-    funnelJobsTitle: "{stage} roles",
-    funnelJobsLoading: "Loading roles…",
-    funnelJobsEmpty: "No roles are currently in this state.",
-    funnelJobsError: "Could not load roles. Please try again.",
     funnelRoundReached: "Reached this round",
     funnelRoundActive: "In this round",
     funnelRoundWaiting: "Completed, waiting",
     funnelRoundPassed: "Passed this round",
     funnelRoundRejected: "Rejected in this round",
     funnelJobsCount: "{count} roles",
+    funnelLeafActive: "In progress",
+    funnelLeafWaiting: "Done, waiting",
+    funnelLeafRejected: "Rejected",
+    funnelDirectInterview: "Straight to interview (no assessment)",
+    funnelShareOfApplied: "{percent} of submitted",
+    funnelPrevStepShare: "{percent} of previous step",
+    funnelPercentNote: "Percentages are shares of all {total} submitted applications. Hover a node for its share of the previous step; click to see the roles.",
+    funnelExcludedNote: "{count} saved or archived roles were never submitted and are not counted.",
+    rateReply: "Applied → got a reply",
+    rateAssessmentToInterview: "Assessment → interview",
+    rateInterviewToOffer: "Interview → offer",
+    rateRejected: "Rejected overall",
     weeklyReviewPeriod: "This week (past 7 days)",
     applicationHeatmap: "Application heatmap",
     applicationHeatmapHint: "From your first application to today. Scroll to review other months.",
@@ -748,12 +740,6 @@ const I18N = {
     lastUpdated: "Last updated",
     followUpUrgent: "Urgent",
     conversionRates: "Conversion rates",
-    responseRate: "Response rate",
-    assessmentRate: "Assessment rate",
-    interviewRate: "Interview rate",
-    rejectionRate: "Rejection rate",
-    offerRate: "Offer rate",
-    substatusDistrib: "Current status breakdown",
     savedStage: "Saved",
     appliedStage: "Applied (active)",
     addQuestion: "+ New question",
@@ -1512,8 +1498,8 @@ function renderApplicationTableHead() {
 function segmentedControl(name, label, options, value) {
   return `
     <div class="segmented" role="radiogroup" aria-label="${escapeHtml(label)}">
-      ${options.map(([optionValue, optionLabel]) => `
-        <button type="button" role="radio" aria-checked="${optionValue === value}" class="${optionValue === value ? "is-selected" : ""}" data-segment="${name}" data-value="${optionValue}">${escapeHtml(optionLabel)}</button>
+      ${options.map(([optionValue, optionLabel, optionTitle]) => `
+        <button type="button" role="radio" aria-checked="${optionValue === value}" class="${optionValue === value ? "is-selected" : ""}" data-segment="${name}" data-value="${optionValue}"${optionTitle ? ` title="${escapeHtml(optionTitle)}"` : ""}>${escapeHtml(optionLabel)}</button>
       `).join("")}
     </div>
   `;
@@ -2189,63 +2175,80 @@ function matchesFunnelPeriod(job) {
     : appliedOn >= SEPTEMBER_CUTOFF;
 }
 
-function buildSummaryStats(appliedJobs = allJobs.filter((job) => !["SAVED", "ARCHIVED"].includes(job.current_stage))) {
-  const total = allJobs.length;
-  const savedTotal = allJobs.filter((job) => job.current_stage === "SAVED").length;
-  // Sankey / funnel only counts jobs that have been submitted (not saved or archived)
-  const appliedTotal = appliedJobs.length;
-  const appliedRejectedJobs = appliedJobs.filter((job) => job.status === "APPLIED_REJECTED");
-  const appliedStaleJobs = appliedJobs.filter((job) => job.status === "APPLIED_STALE");
-  const assessmentTotal = appliedJobs.filter((job) => (
-    job.current_stage === "ASSESSMENT" || job.current_stage === "INTERVIEW" || job.current_stage === "OFFER"
-  )).length;
-  const assessmentRejectedJobs = appliedJobs.filter((job) => job.status === "ASSESSMENT_REJECTED");
-  const interviewTotal = appliedJobs.filter((job) => job.current_stage === "INTERVIEW" || job.current_stage === "OFFER").length;
-  const offerTotal = appliedJobs.filter((job) => job.current_stage === "OFFER" || job.status === "OFFER").length;
-  const interviewRejectedJobs = appliedJobs.filter((job) => job.status === "INTERVIEW_REJECTED");
+// ── Funnel model ─────────────────────────────────────────────────────────────
+// Every count on the funnel page (chart, cards, drawer) and on the dashboard comes
+// from these helpers, so the numbers can't drift apart.
 
+function isSubmittedJob(job) {
+  return !["SAVED", "ARCHIVED"].includes(job.current_stage);
+}
+
+function isOfferJob(job) {
+  return job.current_stage === "OFFER" || job.status === "OFFER";
+}
+
+function reachedInterview(job) {
+  return ["INTERVIEW", "OFFER"].includes(job.current_stage) || isOfferJob(job);
+}
+
+function hadAssessment(job) {
+  if (job.current_stage === "ASSESSMENT") return true;
+  if (!reachedInterview(job)) return false;
+  // The server derives this from the timeline; older servers don't send it, so assume yes.
+  if (job.had_assessment === undefined || job.had_assessment === null) return true;
+  return Boolean(Number(job.had_assessment));
+}
+
+function funnelRoundOf(job, stage) {
+  return Math.max(1, Number(stage === "ASSESSMENT" ? job.assessment_round : job.interview_round) || 1);
+}
+
+// Where a job ended up in one round: null (never reached it), "passed", "rejected", "waiting" or "active".
+function funnelRoundOutcome(job, stage, round) {
+  const isAssessment = stage === "ASSESSMENT";
+  if (isAssessment ? !hadAssessment(job) : !reachedInterview(job)) return null;
+  const jobRound = funnelRoundOf(job, stage);
+  if (jobRound < round) return null;
+  if (jobRound > round) return "passed";
+  if (isAssessment ? reachedInterview(job) : isOfferJob(job)) return "passed";
+  if (job.status === (isAssessment ? "ASSESSMENT_REJECTED" : "INTERVIEW_REJECTED")) return "rejected";
+  if ((isAssessment ? ASSESSMENT_WAITING_STATUSES : INTERVIEW_WAITING_STATUSES).has(job.status)) return "waiting";
+  return "active";
+}
+
+function buildSummaryStats(appliedJobs = allJobs.filter(isSubmittedJob)) {
+  const pick = (predicate) => appliedJobs.filter(predicate);
+  const jobs = {
+    appliedWaiting: pick((job) => job.current_stage === "APPLIED" && !["APPLIED_REJECTED", "APPLIED_STALE"].includes(job.status)),
+    appliedStale: pick((job) => job.status === "APPLIED_STALE"),
+    appliedRejected: pick((job) => job.status === "APPLIED_REJECTED"),
+    assessment: pick(hadAssessment),
+    directInterview: pick((job) => reachedInterview(job) && !hadAssessment(job)),
+    interview: pick(reachedInterview),
+    offer: pick(isOfferJob),
+    assessmentRejected: pick((job) => job.status === "ASSESSMENT_REJECTED"),
+    interviewRejected: pick((job) => job.status === "INTERVIEW_REJECTED"),
+  };
+  const rejectedTotal = jobs.appliedRejected.length + jobs.assessmentRejected.length + jobs.interviewRejected.length;
   return {
-    total,
-    savedTotal,
-    appliedTotal,
-    appliedRejected: appliedRejectedJobs.length,
-    appliedStale: appliedStaleJobs.length,
-    assessmentTotal,
-    assessmentRejected: assessmentRejectedJobs.length,
-    interviewTotal,
-    offerTotal,
-    interviewRejected: interviewRejectedJobs.length,
-    rejectedBreakdown: {
-      applied: appliedRejectedJobs,
-      assessment: assessmentRejectedJobs,
-      interview: interviewRejectedJobs,
-    },
-    activeOrUnknown: Math.max(
-      appliedTotal - appliedRejectedJobs.length - assessmentRejectedJobs.length - interviewRejectedJobs.length - offerTotal,
-      0
-    ),
+    jobs,
+    appliedTotal: appliedJobs.length,
+    appliedStale: jobs.appliedStale.length,
+    appliedRejected: jobs.appliedRejected.length,
+    assessmentTotal: jobs.assessment.length,
+    assessmentRejected: jobs.assessmentRejected.length,
+    interviewTotal: jobs.interview.length,
+    interviewRejected: jobs.interviewRejected.length,
+    offerTotal: jobs.offer.length,
+    rejectedTotal,
+    // "Still in progress" leaves out finished outcomes and applications that went quiet.
+    activeOrUnknown: Math.max(appliedJobs.length - rejectedTotal - jobs.offer.length - jobs.appliedStale.length, 0),
   };
 }
 
-function sankeyNodeHeight(count, scale) {
-  if (!count) return 0;
-  return Math.max(34, Math.round(count * scale));
-}
+// ── Sankey drawing ───────────────────────────────────────────────────────────
 
-function sankeyFlowWidth(count, scale) {
-  if (!count) return 0;
-  return Math.max(6, Math.round(count * scale));
-}
-
-function stackSankeyColumn(nodes, top, height, gap = 18) {
-  const visibleNodes = nodes.filter((node) => node.count > 0);
-  const totalHeight = visibleNodes.reduce((sum, node) => sum + node.height, 0) + Math.max(visibleNodes.length - 1, 0) * gap;
-  let y = top + Math.max((height - totalHeight) / 2, 0);
-  visibleNodes.forEach((node) => {
-    node.y = Math.round(y);
-    y += node.height + gap;
-  });
-}
+let funnelNodeJobs = new Map();
 
 function initialiseSankeyOffsets(nodes, links) {
   const incoming = {};
@@ -2254,17 +2257,13 @@ function initialiseSankeyOffsets(nodes, links) {
     outgoing[link.source] = (outgoing[link.source] || 0) + link.width;
     incoming[link.target] = (incoming[link.target] || 0) + link.width;
   });
-
   nodes.forEach((node) => {
-    const inHeight = incoming[node.key] || 0;
-    const outHeight = outgoing[node.key] || 0;
-    node._inY = node.y + Math.max((node.height - inHeight) / 2, 0);
-    node._outY = node.y + Math.max((node.height - outHeight) / 2, 0);
+    node._inY = node.y + Math.max((node.height - (incoming[node.key] || 0)) / 2, 0);
+    node._outY = node.y + Math.max((node.height - (outgoing[node.key] || 0)) / 2, 0);
   });
 }
 
-function sankeyFlow({ source, target, count, total, color, width, title, routeY = null }) {
-  if (!count) return "";
+function sankeyFlow({ source, target, width, tone, title, routeY = null }) {
   const flowWidth = Math.min(source.height, target.height, width);
   const fromY = source._outY + flowWidth / 2;
   const toY = target._inY + flowWidth / 2;
@@ -2275,390 +2274,189 @@ function sankeyFlow({ source, target, count, total, color, width, title, routeY 
   const mid = (fromX + toX) / 2;
   const path = routeY === null
     ? `M ${fromX} ${fromY} C ${mid} ${fromY}, ${mid} ${toY}, ${toX} ${toY}`
-    : `M ${fromX} ${fromY} C ${fromX + 28} ${fromY}, ${fromX + 28} ${routeY}, ${fromX + 70} ${routeY} L ${toX - 70} ${routeY} C ${toX - 28} ${routeY}, ${toX - 28} ${toY}, ${toX} ${toY}`;
-
+    : `M ${fromX} ${fromY} C ${fromX + 40} ${fromY}, ${fromX + 40} ${routeY}, ${fromX + 90} ${routeY} L ${toX - 90} ${routeY} C ${toX - 40} ${routeY}, ${toX - 40} ${toY}, ${toX} ${toY}`;
   return `
-    <path
-      class="sankey-flow ${color}"
-      d="${path}"
-      stroke-width="${flowWidth}"
-    >
-      <title>${escapeHtml(title || `${count} · ${percent(count, total)}`)}</title>
+    <path class="sankey-flow ${tone}-flow" d="${path}" stroke-width="${flowWidth}">
+      <title>${escapeHtml(title)}</title>
     </path>
   `;
 }
 
-function sankeyNode({ x, y, width, height, title, count, total, tone = "", labelSide = "right", funnelStage = "", funnelRoundStage = "", funnelRound = "", funnelRoundResult = "" }) {
-  const interactive = Boolean(funnelStage || funnelRoundStage);
-  const interactionAttributes = funnelStage
-    ? ` data-funnel-stage="${funnelStage}"`
-    : funnelRoundStage
-      ? ` data-funnel-round-stage="${funnelRoundStage}" data-funnel-round="${funnelRound}" data-funnel-round-result="${funnelRoundResult}"`
-      : "";
-  const labelX = labelSide === "left" ? -10 : width + 10;
-  const anchor = labelSide === "left" ? "end" : "start";
+function sankeyNode(node, total) {
+  // Round nodes have ribbons leaving to the right, so their label goes underneath instead.
+  const side = node.labelSide || (node.isRound ? "below" : "right");
+  const labelX = side === "left" ? -10 : side === "below" ? node.width / 2 : node.width + 10;
+  const anchor = side === "left" ? "end" : side === "below" ? "middle" : "start";
+  const labelY = side === "below" ? node.height + 14 : Math.round(node.height / 2) - 3;
+  const tooltip = [
+    node.title,
+    `${node.count} · ${t("funnelShareOfApplied", { percent: percent(node.count, total) })}`,
+    node.denominator ? t("funnelPrevStepShare", { percent: percent(node.count, node.denominator) }) : "",
+  ].filter(Boolean).join("\n");
   return `
-    <g class="sankey-node ${tone} ${interactive ? "is-clickable" : ""}" transform="translate(${x}, ${y})"${interactive ? `${interactionAttributes} tabindex="0" role="button" aria-label="${escapeHtml(title)}"` : ""}>
-      <rect width="${width}" height="${height}" rx="1"></rect>
-      <text x="${labelX}" y="${Math.round(height / 2) - 3}" text-anchor="${anchor}">
-        <tspan class="node-value" x="${labelX}">${count} · ${percent(count, total)}</tspan>
-        <tspan class="node-title" x="${labelX}" dy="1.25em">${escapeHtml(title)}</tspan>
+    <g class="sankey-node ${node.tone} is-clickable" transform="translate(${node.x}, ${node.y})" data-funnel-node="${node.key}" tabindex="0" role="button" aria-label="${escapeHtml(node.title)}">
+      <title>${escapeHtml(tooltip)}</title>
+      <rect width="${node.width}" height="${node.height}" rx="1"></rect>
+      <text x="${labelX}" y="${labelY}" text-anchor="${anchor}" class="${side === "below" ? "is-below" : ""}">
+        <tspan class="node-value" x="${labelX}">${node.count} · ${percent(node.count, total)}</tspan>
+        <tspan class="node-title" x="${labelX}" dy="1.25em">${escapeHtml(node.label || node.title)}</tspan>
       </text>
     </g>
   `;
 }
 
 function renderSankey(stats, appliedJobs) {
-  const total = stats.appliedTotal; // SAVED jobs are not part of the funnel
+  const total = stats.appliedTotal; // saved / archived roles were never submitted
+  funnelNodeJobs = new Map();
   if (total === 0) {
     return `<div class="sankey-card sankey-empty"><p class="muted">${t("sankeyEmpty")}</p></div>`;
   }
 
-  const appliedActive = Math.max(total - stats.assessmentTotal - stats.appliedRejected - stats.appliedStale, 0);
-  const assessmentJobs = appliedJobs.filter((job) => ["ASSESSMENT", "INTERVIEW", "OFFER"].includes(job.current_stage));
-  const interviewJobs = appliedJobs.filter((job) => ["INTERVIEW", "OFFER"].includes(job.current_stage));
-  const assessmentMaxRound = assessmentJobs.length
-    ? Math.max(...assessmentJobs.map((job) => Math.max(1, Number(job.assessment_round) || 1)))
-    : 0;
-  const interviewMaxRound = interviewJobs.length
-    ? Math.max(...interviewJobs.map((job) => Math.max(1, Number(job.interview_round) || 1)))
-    : 0;
-  const flowScale = 165 / total;
-  const nodeScale = flowScale;
-  const mainWidth = 14;
-  const branchWidth = 14;
-  const columnGap = 205;
-  const assessmentY = 188;
-  const interviewY = 348;
-  const offerY = 465;
+  const scale = 165 / total;
+  const nodeWidth = 14;
+  const columnGap = 175;
+  const leafOffset = 82;
+  const rowY = { leaves: [18, 76, 134], assessment: 188, lane: 292, branches: 330, interviewLeaves: [190, 246, 302], interview: 348, offer: 465 };
   const nodes = [];
   const links = [];
 
   const addNode = (node) => {
-    const width = node.width || mainWidth;
-    nodes.push({
+    if (!node.jobs.length) return null;
+    const created = {
       ...node,
-      width,
-      height: node.height || Math.max(12, Math.round(node.count * nodeScale)),
+      count: node.jobs.length,
+      width: nodeWidth,
+      height: Math.max(12, Math.round(node.jobs.length * scale)),
+    };
+    nodes.push(created);
+    funnelNodeJobs.set(created.key, created);
+    return created;
+  };
+  const addLink = (source, target, count, tone, routeY = null) => {
+    if (!source || !target || !count) return;
+    links.push({ source, target, count, tone, routeY, width: Math.max(3, Math.round(count * scale)), title: `${target.title}: ${count}` });
+  };
+
+  const root = addNode({ key: "root", title: t("sankeyRoot"), jobs: appliedJobs, x: 95, y: 190, tone: "root", labelSide: "left" });
+  const firstColumnX = 95 + columnGap;
+
+  // Rounds: each round node, plus the jobs that stopped there (in progress / waiting / rejected).
+  const buildRounds = (stage, stageJobs, startX, roundY, leafRows, previousCount) => {
+    const maxRound = stageJobs.length ? Math.max(...stageJobs.map((job) => funnelRoundOf(job, stage))) : 0;
+    const isAssessment = stage === "ASSESSMENT";
+    const rounds = [];
+    let denominator = previousCount;
+    for (let round = 1; round <= maxRound; round += 1) {
+      const reached = stageJobs.filter((job) => funnelRoundOutcome(job, stage, round) !== null);
+      const byOutcome = (outcome) => reached.filter((job) => funnelRoundOutcome(job, stage, round) === outcome);
+      const roundText = { round: String(round) };
+      const x = startX + (round - 1) * columnGap;
+      const node = addNode({
+        key: `${stage}-${round}`,
+        title: t(isAssessment ? "funnelAssessmentRound" : "funnelInterviewRound", roundText),
+        jobs: reached,
+        x,
+        y: roundY,
+        tone: "stage",
+        denominator,
+        stage,
+        round,
+        isRound: true,
+      });
+      const leaf = (outcome, tone, titleKey, labelKey, y) => addNode({
+        key: `${stage}-${round}-${outcome}`,
+        title: t(titleKey, roundText),
+        label: t(labelKey),
+        jobs: byOutcome(outcome),
+        x: x + leafOffset,
+        y,
+        tone,
+        denominator: reached.length,
+      });
+      rounds.push({
+        round,
+        node,
+        active: leaf("active", "active", isAssessment ? "funnelAssessmentRoundActive" : "funnelInterviewRoundActive", "funnelLeafActive", leafRows[0]),
+        waiting: leaf("waiting", "waiting", isAssessment ? "funnelAssessmentRoundWaiting" : "funnelInterviewRoundWaiting", "funnelLeafWaiting", leafRows[1]),
+        rejected: leaf("rejected", "rejected", isAssessment ? "funnelAssessmentRoundRejected" : "funnelInterviewRoundRejected", "funnelLeafRejected", leafRows[2]),
+        passedJobs: byOutcome("passed"),
+      });
+      denominator = reached.length;
+    }
+    return rounds;
+  };
+
+  const assessmentRounds = buildRounds("ASSESSMENT", stats.jobs.assessment, firstColumnX, rowY.assessment, rowY.leaves, total);
+  const branches = [
+    ["applied-waiting", t("sankeyAppliedActive"), stats.jobs.appliedWaiting, "waiting"],
+    ["applied-stale", t("sankeyAppliedStale"), stats.jobs.appliedStale, "stale"],
+    ["applied-rejected", t("sankeyRejectedAfterApplied"), stats.jobs.appliedRejected, "rejected"],
+  ].reduce((created, [key, title, jobs, tone]) => {
+    // Stack by real height so large branches (e.g. most of a period went quiet) never overlap.
+    const previous = created.filter(Boolean).at(-1);
+    const y = previous ? previous.y + previous.height + 30 : rowY.branches;
+    return [...created, addNode({ key, title, jobs, x: firstColumnX, y, tone, denominator: total })];
+  }, []);
+  const interviewStartX = firstColumnX + Math.max(assessmentRounds.length, 1) * columnGap;
+  const interviewRounds = buildRounds("INTERVIEW", stats.jobs.interview, interviewStartX, rowY.interview, rowY.interviewLeaves, stats.assessmentTotal + stats.jobs.directInterview.length);
+  const offer = addNode({
+    key: "offer",
+    title: t("sankeyOffer"),
+    jobs: stats.jobs.offer,
+    x: interviewStartX + Math.max(interviewRounds.length, 1) * columnGap,
+    y: rowY.offer,
+    tone: "offer",
+    denominator: stats.interviewTotal,
+  });
+  const firstInterview = interviewRounds[0]?.node;
+
+  // Links leave each node in the vertical order of their targets so ribbons don't cross.
+  addLink(root, assessmentRounds[0]?.node, assessmentRounds[0]?.node?.count, "stage");
+  if (stats.jobs.directInterview.length) {
+    links.push({
+      source: root,
+      target: firstInterview,
+      count: stats.jobs.directInterview.length,
+      tone: "stage",
+      routeY: rowY.lane,
+      width: Math.max(3, Math.round(stats.jobs.directInterview.length * scale)),
+      title: `${t("funnelDirectInterview")}: ${stats.jobs.directInterview.length}`,
+    });
+  }
+  branches.forEach((branch) => addLink(root, branch, branch?.count, branch?.tone));
+
+  const linkRounds = (rounds, stage, nextTarget, nextTone) => {
+    rounds.forEach((current, index) => {
+      ["active", "waiting", "rejected"].forEach((outcome) => addLink(current.node, current[outcome], current[outcome]?.count, current[outcome]?.tone));
+      const next = rounds[index + 1];
+      if (next) {
+        addLink(current.node, next.node, current.passedJobs.filter((job) => funnelRoundOf(job, stage) > current.round).length, "stage");
+      }
+    });
+    [...rounds].reverse().forEach((current) => {
+      addLink(current.node, nextTarget, current.passedJobs.filter((job) => funnelRoundOf(job, stage) === current.round).length, nextTone);
     });
   };
-  const addLink = (link) => {
-    if (!link.count) return;
-    links.push({ ...link, width: Math.max(3, Math.round(link.count * flowScale)) });
-  };
+  linkRounds(assessmentRounds, "ASSESSMENT", firstInterview, "stage");
+  linkRounds(interviewRounds, "INTERVIEW", offer, "offer");
 
-  const rootX = 95;
-  addNode({ key: "root", title: t("sankeyRoot"), count: total, denominator: total, x: rootX, y: 190, tone: "root", labelSide: "left" });
-  const firstStageX = rootX + columnGap;
-  const submittedBranches = [
-    ["appliedActive", t("sankeyAppliedActive"), appliedActive, "active", "active-flow"],
-    ["appliedStale", t("sankeyAppliedStale"), stats.appliedStale, "stale", "stale-flow"],
-    ["appliedRejected", t("sankeyRejectedAfterApplied"), stats.appliedRejected, "rejected", "rejected-flow"],
-  ].filter(([, , count]) => count > 0);
-  submittedBranches.forEach(([key, title, count, tone, flowTone], index) => {
-    addNode({ key, title, count, denominator: total, x: firstStageX, y: 330 + index * 72, width: branchWidth, tone });
-  });
-
-  const assessmentNodes = [];
-  const assessmentOutcomes = [];
-  for (let round = 1; round <= assessmentMaxRound; round += 1) {
-    const count = assessmentJobs.filter((job) => Number(job.assessment_round || 1) >= round).length;
-    const previousCount = round === 1
-      ? total
-      : assessmentJobs.filter((job) => Number(job.assessment_round || 1) >= round - 1).length;
-    const node = {
-      key: `assessment-round-${round}`,
-      title: t("funnelAssessmentRound", { round: String(round) }),
-      count,
-      denominator: previousCount,
-      x: firstStageX + (round - 1) * columnGap,
-      y: assessmentY,
-      tone: "stage",
-      funnelRoundStage: "ASSESSMENT",
-      funnelRound: String(round),
-      funnelRoundResult: "reached",
-    };
-    assessmentNodes.push(node);
-    addNode(node);
-    const rejectedCount = assessmentJobs.filter((job) => (
-      job.status === "ASSESSMENT_REJECTED" && Number(job.assessment_round || 1) === round
-    )).length;
-    const waitingCount = assessmentJobs.filter((job) => (
-      job.current_stage === "ASSESSMENT"
-      && ASSESSMENT_WAITING_STATUSES.has(job.status)
-      && Number(job.assessment_round || 1) === round
-    )).length;
-    const activeCount = assessmentJobs.filter((job) => (
-      job.current_stage === "ASSESSMENT"
-      && job.status !== "ASSESSMENT_REJECTED"
-      && !ASSESSMENT_WAITING_STATUSES.has(job.status)
-      && Number(job.assessment_round || 1) === round
-    )).length;
-    const interviewCount = interviewJobs.filter((job) => Number(job.assessment_round || 1) === round).length;
-    const nextRoundCount = assessmentJobs.filter((job) => Number(job.assessment_round || 1) > round).length;
-    assessmentOutcomes.push({ round, count, activeCount, waitingCount, rejectedCount, interviewCount, nextRoundCount });
-    if (activeCount) {
-      addNode({
-        key: `assessment-round-${round}-active`,
-        title: t("funnelAssessmentRoundActive", { round: String(round) }),
-        count: activeCount,
-        denominator: count,
-        x: node.x + 105,
-        y: 18,
-        width: branchWidth,
-        tone: "stage",
-        funnelRoundStage: "ASSESSMENT",
-        funnelRound: String(round),
-        funnelRoundResult: "active",
-      });
-    }
-    if (waitingCount) {
-      addNode({
-        key: `assessment-round-${round}-waiting`,
-        title: t("funnelAssessmentRoundWaiting", { round: String(round) }),
-        count: waitingCount,
-        denominator: count,
-        x: node.x + 105,
-        y: 76,
-        width: branchWidth,
-        tone: "active",
-        funnelRoundStage: "ASSESSMENT",
-        funnelRound: String(round),
-        funnelRoundResult: "waiting",
-      });
-    }
-    if (rejectedCount) {
-      const rejectedKey = `assessment-round-${round}-rejected`;
-      const rejectedTitle = t("funnelAssessmentRoundRejected", { round: String(round) });
-      addNode({
-        key: rejectedKey,
-        title: rejectedTitle,
-        count: rejectedCount,
-        denominator: count,
-        x: node.x + 105,
-        y: 134,
-        width: branchWidth,
-        tone: "rejected",
-        funnelRoundStage: "ASSESSMENT",
-        funnelRound: String(round),
-        funnelRoundResult: "rejected",
-      });
-    }
-  }
-
-  const interviewStartX = firstStageX + Math.max(assessmentMaxRound, 1) * columnGap;
-  const interviewNodes = [];
-  const interviewOutcomes = [];
-  for (let round = 1; round <= interviewMaxRound; round += 1) {
-    const count = interviewJobs.filter((job) => Number(job.interview_round || 1) >= round).length;
-    const previousCount = round === 1
-      ? Math.max(stats.assessmentTotal, 1)
-      : interviewJobs.filter((job) => Number(job.interview_round || 1) >= round - 1).length;
-    const node = {
-      key: `interview-round-${round}`,
-      title: t("funnelInterviewRound", { round: String(round) }),
-      count,
-      denominator: previousCount,
-      x: interviewStartX + (round - 1) * columnGap,
-      y: interviewY,
-      tone: "stage",
-      funnelRoundStage: "INTERVIEW",
-      funnelRound: String(round),
-      funnelRoundResult: "reached",
-    };
-    interviewNodes.push(node);
-    addNode(node);
-    const rejectedCount = interviewJobs.filter((job) => (
-      job.status === "INTERVIEW_REJECTED" && Number(job.interview_round || 1) === round
-    )).length;
-    const waitingCount = interviewJobs.filter((job) => (
-      job.current_stage === "INTERVIEW"
-      && INTERVIEW_WAITING_STATUSES.has(job.status)
-      && Number(job.interview_round || 1) === round
-    )).length;
-    const activeCount = interviewJobs.filter((job) => (
-      job.current_stage === "INTERVIEW"
-      && !["INTERVIEW_REJECTED", "OFFER"].includes(job.status)
-      && !INTERVIEW_WAITING_STATUSES.has(job.status)
-      && Number(job.interview_round || 1) === round
-    )).length;
-    const offerCount = interviewJobs.filter((job) => (
-      (job.current_stage === "OFFER" || job.status === "OFFER")
-      && Number(job.interview_round || 1) === round
-    )).length;
-    const nextRoundCount = interviewJobs.filter((job) => Number(job.interview_round || 1) > round).length;
-    interviewOutcomes.push({ round, count, activeCount, waitingCount, rejectedCount, offerCount, nextRoundCount });
-    if (activeCount) {
-      addNode({
-        key: `interview-round-${round}-active`,
-        title: t("funnelInterviewRoundActive", { round: String(round) }),
-        count: activeCount,
-        denominator: count,
-        x: node.x + 105,
-        y: 190,
-        width: branchWidth,
-        tone: "stage",
-        funnelRoundStage: "INTERVIEW",
-        funnelRound: String(round),
-        funnelRoundResult: "active",
-      });
-    }
-    if (waitingCount) {
-      addNode({
-        key: `interview-round-${round}-waiting`,
-        title: t("funnelInterviewRoundWaiting", { round: String(round) }),
-        count: waitingCount,
-        denominator: count,
-        x: node.x + 105,
-        y: 246,
-        width: branchWidth,
-        tone: "active",
-        funnelRoundStage: "INTERVIEW",
-        funnelRound: String(round),
-        funnelRoundResult: "waiting",
-      });
-    }
-    if (rejectedCount) {
-      const rejectedKey = `interview-round-${round}-rejected`;
-      const rejectedTitle = t("funnelInterviewRoundRejected", { round: String(round) });
-      addNode({
-        key: rejectedKey,
-        title: rejectedTitle,
-        count: rejectedCount,
-        denominator: count,
-        x: node.x + 105,
-        y: 302,
-        width: branchWidth,
-        tone: "rejected",
-        funnelRoundStage: "INTERVIEW",
-        funnelRound: String(round),
-        funnelRoundResult: "rejected",
-      });
-    }
-  }
-
-  if (stats.offerTotal > 0) {
-    const offerX = interviewStartX + Math.max(interviewMaxRound, 1) * columnGap;
-    addNode({ key: "offer", title: t("sankeyOffer"), count: stats.offerTotal, denominator: Math.max(stats.interviewTotal, 1), x: offerX, y: offerY, tone: "offer" });
-  }
-
-  // Link order follows the vertical order of targets. Keeping those orders aligned
-  // is what prevents the ribbons from crossing one another.
-  if (assessmentNodes.length) {
-    addLink({ source: "root", target: assessmentNodes[0].key, count: stats.assessmentTotal, tone: "stage-flow", title: `${assessmentNodes[0].title}: ${stats.assessmentTotal}` });
-  }
-  submittedBranches.forEach(([key, title, count, , flowTone]) => {
-    addLink({ source: "root", target: key, count, tone: flowTone, title: `${title}: ${count}` });
-  });
-
-  assessmentOutcomes.forEach(({ round, activeCount, waitingCount, rejectedCount, interviewCount, nextRoundCount }) => {
-    const source = `assessment-round-${round}`;
-    addLink({ source, target: `${source}-active`, count: activeCount, tone: "stage-flow", title: `${t("funnelAssessmentRoundActive", { round: String(round) })}: ${activeCount}` });
-    addLink({ source, target: `${source}-waiting`, count: waitingCount, tone: "active-flow", title: `${t("funnelAssessmentRoundWaiting", { round: String(round) })}: ${waitingCount}` });
-    addLink({ source, target: `${source}-rejected`, count: rejectedCount, tone: "rejected-flow", title: `${t("funnelAssessmentRoundRejected", { round: String(round) })}: ${rejectedCount}` });
-    if (round < assessmentMaxRound) {
-      addLink({ source, target: `assessment-round-${round + 1}`, count: nextRoundCount, tone: "stage-flow", title: `${t("funnelAssessmentRound", { round: String(round + 1) })}: ${nextRoundCount}` });
-    }
-  });
-  [...assessmentOutcomes].reverse().forEach(({ round, interviewCount }) => {
-    const source = `assessment-round-${round}`;
-    if (interviewNodes.length) {
-      addLink({ source, target: interviewNodes[0].key, count: interviewCount, tone: "stage-flow", title: `${t("funnelInterviewRound", { round: "1" })}: ${interviewCount}` });
-    }
-  });
-
-  interviewOutcomes.forEach(({ round, activeCount, waitingCount, rejectedCount, offerCount, nextRoundCount }) => {
-    const source = `interview-round-${round}`;
-    addLink({ source, target: `${source}-active`, count: activeCount, tone: "stage-flow", title: `${t("funnelInterviewRoundActive", { round: String(round) })}: ${activeCount}` });
-    addLink({ source, target: `${source}-waiting`, count: waitingCount, tone: "active-flow", title: `${t("funnelInterviewRoundWaiting", { round: String(round) })}: ${waitingCount}` });
-    addLink({ source, target: `${source}-rejected`, count: rejectedCount, tone: "rejected-flow", title: `${t("funnelInterviewRoundRejected", { round: String(round) })}: ${rejectedCount}` });
-    if (round < interviewMaxRound) {
-      addLink({ source, target: `interview-round-${round + 1}`, count: nextRoundCount, tone: "stage-flow", title: `${t("funnelInterviewRound", { round: String(round + 1) })}: ${nextRoundCount}` });
-    }
-  });
-  [...interviewOutcomes].reverse().forEach(({ round, offerCount }) => {
-    const source = `interview-round-${round}`;
-    if (stats.offerTotal > 0) {
-      addLink({ source, target: "offer", count: offerCount, tone: "offer-flow", title: `${t("sankeyOffer")}: ${offerCount}` });
-    }
-  });
-
-  const nodeMap = Object.fromEntries(nodes.map((node) => [node.key, node]));
-  initialiseSankeyOffsets(nodes, links);
+  initialiseSankeyOffsets(nodes, links.map((link) => ({ ...link, source: link.source.key, target: link.target.key })));
+  // Size the canvas to its content (labels run ~180px right of the last column / 30px below the lowest node),
+  // and never scale it up past that size, so a short period doesn't render as a zoomed-in chart.
   const rightEdge = Math.max(...nodes.map((node) => node.x + node.width));
-  const diagram = { width: Math.max(900, rightEdge + 210), height: 540 };
+  const width = rightEdge + 190;
+  const top = Math.max(0, Math.min(...nodes.map((node) => node.y)) - 20);
+  const height = Math.max(...nodes.map((node) => node.y + node.height)) + 40 - top;
 
   return `
     <div class="sankey-card">
-      <svg class="sankey-diagram" viewBox="0 0 ${diagram.width} ${diagram.height}" style="min-width: ${diagram.width}px" role="img" aria-label="Application Sankey Diagram">
-        <g class="sankey-flows">
-          ${links.map((link) => sankeyFlow({
-            source: nodeMap[link.source],
-            target: nodeMap[link.target],
-            count: link.count,
-            total: nodeMap[link.source]?.count || total,
-            color: link.tone,
-            width: link.width,
-            title: link.title,
-            routeY: link.routeY,
-          })).join("")}
-        </g>
-
-        ${nodes.filter((node) => node.count > 0).map((node) => sankeyNode({ ...node, total: node.denominator })).join("")}
+      <svg class="sankey-diagram" viewBox="0 ${top} ${width} ${height}" style="max-width: ${width}px; margin: 0 auto; min-width: ${Math.min(width, 860)}px" role="img" aria-label="Application Sankey Diagram">
+        <g class="sankey-flows">${links.map(sankeyFlow).join("")}</g>
+        ${nodes.map((node) => sankeyNode(node, total)).join("")}
       </svg>
+      <p class="muted sankey-note">${escapeHtml(t("funnelPercentNote", { total: String(total) }))}</p>
     </div>
   `;
-}
-
-async function openFunnelJobsDrawer(stage) {
-  const drawer = summaryView.querySelector("#funnelJobsDrawer");
-  const layout = summaryView.querySelector(".summary-funnel-layout");
-  if (!drawer || !layout) return;
-  const title = stage === "ASSESSMENT" ? t("sankeyAssessmentActive") : t("sankeyInterviewActive");
-  layout.classList.add("is-drawer-open");
-  drawer.hidden = false;
-  drawer.innerHTML = `
-    <div class="funnel-jobs-drawer-head">
-      <div>
-        <p class="eyebrow">${escapeHtml(t("funnelJobsTitle", { stage: title }))}</p>
-        <h3>${escapeHtml(title)}</h3>
-      </div>
-      <button type="button" class="icon-btn" data-close-funnel-drawer aria-label="Close">×</button>
-    </div>
-    <p class="muted funnel-jobs-loading">${escapeHtml(t("funnelJobsLoading"))}</p>
-  `;
-  try {
-    const jobs = (await api(`/api/funnel-jobs?stage=${encodeURIComponent(stage)}`))
-      .filter(matchesFunnelPeriod)
-      .filter((job) => !["ASSESSMENT_REJECTED", "INTERVIEW_REJECTED"].includes(job.status));
-    if (!summaryView.contains(drawer)) return;
-    drawer.querySelector(".funnel-jobs-loading")?.remove();
-    const list = document.createElement("div");
-    list.className = "funnel-jobs-list";
-    list.innerHTML = jobs.length ? jobs.map((job) => `
-      <button type="button" class="funnel-job-item" data-funnel-job-id="${job.id}">
-        <strong>${escapeHtml(job.position_name || "")}</strong>
-        <span>${escapeHtml(job.company_name || "")}</span>
-        <small>${escapeHtml(stageLabelForJob(job))} · ${escapeHtml(statusLabel(job.status))}</small>
-        <small>${escapeHtml(formatDate(job.updated_at || job.apply_time || job.created_at))}</small>
-      </button>
-    `).join("") : `<p class="muted funnel-jobs-empty">${escapeHtml(t("funnelJobsEmpty"))}</p>`;
-    drawer.appendChild(list);
-    list.querySelectorAll("[data-funnel-job-id]").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const job = jobs.find((item) => String(item.id) === button.dataset.funnelJobId);
-        if (job) await renderJobDetailDialog(job);
-      });
-    });
-  } catch (error) {
-    drawer.querySelector(".funnel-jobs-loading")?.replaceWith(
-      Object.assign(document.createElement("p"), { className: "muted funnel-jobs-empty", textContent: t("funnelJobsError") })
-    );
-  }
-  drawer.querySelector("[data-close-funnel-drawer]")?.addEventListener("click", () => {
-    drawer.hidden = true;
-    layout.classList.remove("is-drawer-open");
-  });
 }
 
 function funnelJobItemHtml(job) {
@@ -2672,109 +2470,48 @@ function funnelJobItemHtml(job) {
   `;
 }
 
-function openFunnelRoundDrawer(stage, round, result = "reached") {
+function openFunnelNodeDrawer(key) {
+  const node = funnelNodeJobs.get(key);
   const drawer = summaryView.querySelector("#funnelJobsDrawer");
   const layout = summaryView.querySelector(".summary-funnel-layout");
-  if (!drawer || !layout) return;
+  if (!node || !drawer || !layout) return;
 
-  const numericRound = Math.max(1, Number(round) || 1);
-  const isAssessment = stage === "ASSESSMENT";
-  const roundField = isAssessment ? "assessment_round" : "interview_round";
-  const rejectedStatus = isAssessment ? "ASSESSMENT_REJECTED" : "INTERVIEW_REJECTED";
-  const waitingStatuses = isAssessment ? ASSESSMENT_WAITING_STATUSES : INTERVIEW_WAITING_STATUSES;
-  const reachedStages = isAssessment ? ["ASSESSMENT", "INTERVIEW", "OFFER"] : ["INTERVIEW", "OFFER"];
-  const passedStages = isAssessment ? ["INTERVIEW", "OFFER"] : ["OFFER"];
-  const titleKey = result === "rejected"
-    ? isAssessment ? "funnelAssessmentRoundRejected" : "funnelInterviewRoundRejected"
-    : isAssessment ? "funnelAssessmentRound" : "funnelInterviewRound";
-  const title = t(titleKey, { round: String(numericRound) });
-
-  let roundJobs = allJobs
-    .filter((job) => !["SAVED", "ARCHIVED"].includes(job.current_stage))
-    .filter(matchesFunnelPeriod)
-    .filter((job) => reachedStages.includes(job.current_stage))
-    .filter((job) => Number(job[roundField] || 1) >= numericRound);
-  if (result === "rejected") {
-    roundJobs = roundJobs.filter((job) => (
-      job.status === rejectedStatus && Number(job[roundField] || 1) === numericRound
-    ));
-  } else if (result === "active") {
-    roundJobs = roundJobs.filter((job) => (
-      job.current_stage === stage
-      && job.status !== rejectedStatus
-      && !waitingStatuses.has(job.status)
-      && Number(job[roundField] || 1) === numericRound
-    ));
-  } else if (result === "waiting") {
-    roundJobs = roundJobs.filter((job) => (
-      job.current_stage === stage
-      && waitingStatuses.has(job.status)
-      && Number(job[roundField] || 1) === numericRound
-    ));
-  }
-
-  const groups = result === "rejected"
-    ? [{ label: t("funnelRoundRejected"), jobs: roundJobs }]
-    : result === "active"
-      ? [{ label: t("funnelRoundActive"), jobs: roundJobs }]
-    : result === "waiting"
-      ? [{ label: t("funnelRoundWaiting"), jobs: roundJobs }]
-    : [
-        {
-          label: t("funnelRoundActive"),
-          jobs: roundJobs.filter((job) => (
-            job.status !== rejectedStatus
-            && !waitingStatuses.has(job.status)
-            && Number(job[roundField] || 1) === numericRound
-            && !passedStages.includes(job.current_stage)
-          )),
-        },
-        {
-          label: t("funnelRoundWaiting"),
-          jobs: roundJobs.filter((job) => (
-            waitingStatuses.has(job.status)
-            && Number(job[roundField] || 1) === numericRound
-            && !passedStages.includes(job.current_stage)
-          )),
-        },
-        {
-          label: t("funnelRoundPassed"),
-          jobs: roundJobs.filter((job) => (
-            Number(job[roundField] || 1) > numericRound || passedStages.includes(job.current_stage)
-          )),
-        },
-        {
-          label: t("funnelRoundRejected"),
-          jobs: roundJobs.filter((job) => (
-            job.status === rejectedStatus && Number(job[roundField] || 1) === numericRound
-          )),
-        },
-      ];
+  const groups = node.isRound
+    ? [
+        ["active", "funnelRoundActive"],
+        ["waiting", "funnelRoundWaiting"],
+        ["passed", "funnelRoundPassed"],
+        ["rejected", "funnelRoundRejected"],
+      ].map(([outcome, labelKey]) => ({
+        label: t(labelKey),
+        jobs: node.jobs.filter((job) => funnelRoundOutcome(job, node.stage, node.round) === outcome),
+      })).filter((group) => group.jobs.length)
+    : [{ label: "", jobs: node.jobs }];
 
   layout.classList.add("is-drawer-open");
   drawer.hidden = false;
   drawer.innerHTML = `
     <div class="funnel-jobs-drawer-head">
       <div>
-        <p class="eyebrow">${escapeHtml(result === "rejected" ? t("funnelRoundRejected") : result === "active" ? t("funnelRoundActive") : result === "waiting" ? t("funnelRoundWaiting") : t("funnelRoundReached"))}</p>
-        <h3>${escapeHtml(title)}</h3>
-        <p class="muted">${escapeHtml(t("funnelJobsCount", { count: String(roundJobs.length) }))}</p>
+        ${node.isRound ? `<p class="eyebrow">${escapeHtml(t("funnelRoundReached"))}</p>` : ""}
+        <h3>${escapeHtml(node.title)}</h3>
+        <p class="muted">${escapeHtml(t("funnelJobsCount", { count: String(node.jobs.length) }))}</p>
       </div>
       <button type="button" class="icon-btn" data-close-funnel-drawer aria-label="Close">×</button>
     </div>
     <div class="funnel-jobs-list">
-      ${roundJobs.length ? groups.filter((group) => group.jobs.length).map((group) => `
+      ${groups.map((group) => `
         <section class="funnel-jobs-group">
-          <h4>${escapeHtml(group.label)} <span>${group.jobs.length}</span></h4>
+          ${group.label ? `<h4>${escapeHtml(group.label)} <span>${group.jobs.length}</span></h4>` : ""}
           ${group.jobs.map(funnelJobItemHtml).join("")}
         </section>
-      `).join("") : `<p class="muted funnel-jobs-empty">${escapeHtml(t("funnelJobsEmpty"))}</p>`}
+      `).join("")}
     </div>
   `;
 
   drawer.querySelectorAll("[data-funnel-job-id]").forEach((button) => {
     button.addEventListener("click", async () => {
-      const job = roundJobs.find((item) => String(item.id) === button.dataset.funnelJobId);
+      const job = node.jobs.find((item) => String(item.id) === button.dataset.funnelJobId);
       if (job) await renderJobDetailDialog(job);
     });
   });
@@ -2785,56 +2522,37 @@ function openFunnelRoundDrawer(stage, round, result = "reached") {
 }
 
 function renderSummaryView() {
-  const appliedJobs = allJobs
-    .filter((job) => !["SAVED", "ARCHIVED"].includes(job.current_stage))
-    .filter(matchesFunnelPeriod);
+  const appliedJobs = allJobs.filter(isSubmittedJob).filter(matchesFunnelPeriod);
   const stats = buildSummaryStats(appliedJobs);
-  summary.textContent = t("summaryText", { total: stats.appliedTotal, active: stats.activeOrUnknown });
+  const total = stats.appliedTotal;
+  const notSubmitted = allJobs.length - allJobs.filter(isSubmittedJob).length;
+  summary.textContent = t("summaryText", { total, active: stats.activeOrUnknown });
 
-  const appliedBase = appliedJobs.length;
-  const totalRejected = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
-  const gotReply = appliedJobs.filter((j) => !["APPLIED_SUCCESS", "APPLIED_STALE"].includes(j.status)).length;
+  const gotReply = appliedJobs.filter((job) => !["APPLIED_SUCCESS", "APPLIED_STALE"].includes(job.status)).length;
+  const passedAssessment = stats.jobs.assessment.filter(reachedInterview).length;
   const pct = (n, d) => d > 0 ? `${Math.round((n / d) * 100)}%` : "—";
-
+  // Step-to-step conversion. The chart shows shares of all applications, so these add information instead of repeating it.
   const rateCards = [
-    { label: t("responseRate"), value: pct(gotReply, appliedBase), note: `${gotReply}/${appliedBase}` },
-    { label: t("assessmentRate"), value: pct(stats.assessmentTotal, appliedBase), note: `${stats.assessmentTotal}/${appliedBase}` },
-    { label: t("interviewRate"), value: pct(stats.interviewTotal, appliedBase), note: `${stats.interviewTotal}/${appliedBase}` },
-    { label: t("offerRate"), value: pct(stats.offerTotal, appliedBase), note: `${stats.offerTotal}/${appliedBase}` },
-    { label: t("rejectionRate"), value: pct(totalRejected, appliedBase), note: `${totalRejected}/${appliedBase}` },
+    { label: t("rateReply"), value: pct(gotReply, total), note: `${gotReply}/${total}` },
+    { label: t("rateAssessmentToInterview"), value: pct(passedAssessment, stats.assessmentTotal), note: `${passedAssessment}/${stats.assessmentTotal}` },
+    { label: t("rateInterviewToOffer"), value: pct(stats.offerTotal, stats.interviewTotal), note: `${stats.offerTotal}/${stats.interviewTotal}` },
+    { label: t("rateRejected"), value: pct(stats.rejectedTotal, total), note: `${stats.rejectedTotal}/${total}` },
   ];
-
-  // Substatus distribution — count submitted jobs per substatus, all stages
-  const subCounts = {};
-  appliedJobs.forEach((j) => {
-    const key = j.status || "UNKNOWN";
-    subCounts[key] = (subCounts[key] || 0) + 1;
-  });
-  const subEntries = Object.entries(subCounts)
-    .sort((a, b) => b[1] - a[1])
-    .filter(([k]) => k !== "UNKNOWN");
-  const maxCount = subEntries.length > 0 ? subEntries[0][1] : 1;
 
   summaryView.innerHTML = `
     <div class="summary-panel">
       <div class="summary-intro">
         <h3>${t("summaryIntroTitle")}</h3>
         <p>${t("summaryIntroBody")}</p>
+        ${notSubmitted ? `<p class="muted">${escapeHtml(t("funnelExcludedNote", { count: String(notSubmitted) }))}</p>` : ""}
       </div>
 
-      <div class="funnel-period-controls" role="group" aria-label="${t("funnelPeriodLabel")}">
-        ${[
-          ["ALL", "funnelPeriodAll"],
-          ["BEFORE_SEPTEMBER", "funnelPeriodBeforeSeptember"],
-          ["FROM_SEPTEMBER", "funnelPeriodFromSeptember"],
-        ].map(([period, label]) => `
-          <button type="button" data-funnel-period="${period}"
-            class="${funnelPeriod === period ? "is-selected" : ""}"
-            aria-pressed="${funnelPeriod === period}"
-            title="${period === "ALL" ? t("funnelPeriodAll") : period === "BEFORE_SEPTEMBER" ? "< 2026-09-01" : "≥ 2026-09-01"}">
-            ${t(label)}
-          </button>
-        `).join("")}
+      <div class="funnel-period-controls">
+        ${segmentedControl("funnel-period", t("funnelPeriodLabel"), [
+          ["ALL", t("funnelPeriodAll")],
+          ["BEFORE_SEPTEMBER", t("funnelPeriodBeforeSeptember"), "< 2026-09-01"],
+          ["FROM_SEPTEMBER", t("funnelPeriodFromSeptember"), "≥ 2026-09-01"],
+        ], funnelPeriod)}
       </div>
 
       <div class="summary-funnel-layout">
@@ -2850,43 +2568,16 @@ function renderSummaryView() {
             <span class="summary-metric-note">${note}</span>
           </div>`).join("")}
       </div>
-
-      ${subEntries.length > 0 ? `
-        <div class="summary-distrib">
-          <h4 class="summary-distrib-title">${t("substatusDistrib")}</h4>
-          ${subEntries.map(([key, count]) => `
-            <div class="summary-distrib-row">
-              <span class="summary-distrib-label">${escapeHtml(statusLabel(key))}</span>
-              <div class="summary-distrib-bar-wrap">
-                <div class="summary-distrib-bar" style="width:${Math.round((count / maxCount) * 100)}%"></div>
-              </div>
-              <span class="summary-distrib-count">${count}</span>
-            </div>`).join("")}
-        </div>` : ""}
     </div>
   `;
-  summaryView.querySelectorAll("[data-funnel-period]").forEach((button) => {
+  summaryView.querySelectorAll('[data-segment="funnel-period"]').forEach((button) => {
     button.addEventListener("click", () => {
-      funnelPeriod = button.dataset.funnelPeriod;
+      funnelPeriod = button.dataset.value;
       renderSummaryView();
     });
   });
-  summaryView.querySelectorAll("[data-funnel-stage]").forEach((node) => {
-    const open = () => openFunnelJobsDrawer(node.dataset.funnelStage);
-    node.addEventListener("click", open);
-    node.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        open();
-      }
-    });
-  });
-  summaryView.querySelectorAll("[data-funnel-round-stage]").forEach((node) => {
-    const open = () => openFunnelRoundDrawer(
-      node.dataset.funnelRoundStage,
-      node.dataset.funnelRound,
-      node.dataset.funnelRoundResult
-    );
+  summaryView.querySelectorAll("[data-funnel-node]").forEach((node) => {
+    const open = () => openFunnelNodeDrawer(node.dataset.funnelNode);
     node.addEventListener("click", open);
     node.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -3089,7 +2780,7 @@ function renderReviewCalendar(dayData) {
 
 async function renderDashboardView() {
   const stats = buildSummaryStats();
-  const rejectedTotal = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
+  const rejectedTotal = stats.rejectedTotal;
   const recentJobs = allJobs.slice(0, 5);
   const weeklyNote = latestWeeklyNote();
   let dayData = { recorded_jobs: [], applied_jobs: [], timeline_events: [] };
@@ -3105,7 +2796,7 @@ async function renderDashboardView() {
         <div class="dashboard-metrics">
           <button type="button" data-dashboard-go="APPLICATIONS">
             <span>${t("totalApplied")}</span>
-            <strong>${stats.total}</strong>
+            <strong>${stats.appliedTotal}</strong>
           </button>
           <button type="button" data-dashboard-go="APPLICATIONS">
             <span>${t("dashboardActive")}</span>
