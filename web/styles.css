@@ -1133,8 +1133,8 @@ h3 {
 
 .sankey-flow {
   fill: none;
-  opacity: 0.58;
-  stroke-linecap: round;
+  opacity: 0.62;
+  stroke-linecap: butt;
   mix-blend-mode: multiply;
 }
 
@@ -1159,34 +1159,33 @@ h3 {
 }
 
 .sankey-node rect {
-  fill: #fffffe;
-  stroke: #33272a;
-  stroke-width: 1.6;
+  fill: #8b98a7;
+  stroke: none;
 }
 
 .sankey-node.root rect {
-  fill: #d8e2ff;
+  fill: #9d948f;
 }
 
 .sankey-node.stage rect {
-  fill: #e8ecff;
+  fill: #3d8ec9;
 }
 
 .sankey-node.active rect {
-  fill: #d8f3dc;
+  fill: #4aa96c;
 }
 
 .sankey-node.stale rect {
-  fill: #fff1c7;
+  fill: #e5a34b;
 }
 
 .sankey-node.offer rect {
-  fill: #c8f7dc;
+  fill: #d5ad28;
 }
 
 .sankey-node.rejected rect {
-  fill: #ffd6e0;
-  stroke: #33272a;
+  fill: #df5656;
+  stroke: none;
 }
 
 .sankey-node.muted-node rect {
@@ -1197,13 +1196,18 @@ h3 {
 .sankey-node text {
   fill: var(--text);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
-.sankey-node .node-count {
+.sankey-node .node-value {
   fill: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
+}
+
+.sankey-node .node-title {
+  font-size: 12px;
+  font-weight: 650;
 }
 
 table {

@@ -50,6 +50,7 @@ APPLIED_WAITING_STATUS = "APPLIED_SUCCESS"
 APPLIED_STALE_STATUS = "APPLIED_STALE"
 ASSESSMENT_INVITED_STATUS = "ASSESSMENT_INVITED"
 ASSESSMENT_COMPLETED_STATUS = "ASSESSMENT_COMPLETED"
+PRE_INTERVIEW_COMPLETED_STATUS = "PRE_INTERVIEW_COMPLETED"
 ASSESSMENT_NEXT_ROUND_STATUS = "ASSESSMENT_NEXT_ROUND"
 ASSESSMENT_REJECTED_STATUS = "ASSESSMENT_REJECTED"
 INTERVIEW_INVITED_STATUS = "INTERVIEW_INVITED"
@@ -66,6 +67,7 @@ KNOWN_NEXT_ACTIONS = {
     "DECIDE",
     "APPLY",
     "WAIT",
+    "PRE_INTERVIEW_DONE_WAIT",
     "FOLLOW_UP",
     "PREPARE",
     "COMPLETE_TASK",
@@ -115,6 +117,7 @@ def stage_for_status(status: str) -> str | None:
         "TECH_TEST",
         ASSESSMENT_INVITED_STATUS,
         ASSESSMENT_COMPLETED_STATUS,
+        PRE_INTERVIEW_COMPLETED_STATUS,
         ASSESSMENT_NEXT_ROUND_STATUS,
         ASSESSMENT_REJECTED_STATUS,
     }:
@@ -147,9 +150,20 @@ def default_next_action(stage: str, status: str) -> str:
         return "DECIDE"
     if stage == "APPLIED":
         return "WAIT"
+    if status == PRE_INTERVIEW_COMPLETED_STATUS:
+        return "PRE_INTERVIEW_DONE_WAIT"
     if stage in {"ASSESSMENT", "INTERVIEW"}:
         return "PREPARE"
     return DEFAULT_NEXT_ACTION
+
+
+def is_outcome_status(stage: str, status: str) -> bool:
+    """Offer / rejection / archive end the process, so an in-progress next action no longer applies."""
+    return (
+        stage in {"OFFER", "ARCHIVED"}
+        or status in {INTERVIEW_OFFER_STATUS, "ARCHIVED", SAVED_NOT_APPLY_STATUS}
+        or status.endswith("_REJECTED")
+    )
 
 
 def should_default_next_action(current_action: str | None, stage: str, status: str) -> bool:
@@ -450,6 +464,15 @@ def init_db() -> None:
             SET current_stage = 'ARCHIVED',
                 next_action = 'ARCHIVE'
             WHERE status = 'SAVED_NOT_APPLY'
+            """
+        )
+        # Offers whose next action was left on an in-progress step (e.g. PREPARE) from before the offer.
+        conn.execute(
+            """
+            UPDATE job_applications
+            SET next_action = 'COMPLETE_TASK'
+            WHERE status = 'OFFER'
+              AND next_action IN ('DECIDE', 'APPLY', 'WAIT', 'PRE_INTERVIEW_DONE_WAIT', 'PREPARE')
             """
         )
         conn.execute(
@@ -1639,7 +1662,10 @@ class Handler(BaseHTTPRequestHandler):
             if ("current_stage" in updates or "status" in updates) and "next_action" not in updates:
                 next_stage = updates.get("current_stage", existing["current_stage"])
                 next_status = updates.get("status", existing["status"])
-                if should_default_next_action(existing["next_action"], existing["current_stage"], existing["status"]):
+                if (
+                    should_default_next_action(existing["next_action"], existing["current_stage"], existing["status"])
+                    or (is_outcome_status(next_stage, next_status) and not is_outcome_status(existing["current_stage"], existing["status"]))
+                ):
                     updates["next_action"] = default_next_action(next_stage, next_status)
                     updates["updated_at"] = utc_now()
             assignments = ", ".join([f"{key} = ?" for key in updates.keys()])

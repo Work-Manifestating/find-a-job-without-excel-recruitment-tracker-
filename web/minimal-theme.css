@@ -399,8 +399,7 @@ a {
 
 .sankey-node.is-clickable:hover rect,
 .sankey-node.is-clickable:focus rect {
-  stroke: var(--accent);
-  stroke-width: 2.4;
+  filter: brightness(0.82);
 }
 
 .funnel-jobs-drawer {
@@ -428,6 +427,25 @@ a {
 .funnel-jobs-list {
   display: grid;
   gap: 8px;
+}
+
+.funnel-jobs-group {
+  display: grid;
+  gap: 8px;
+}
+
+.funnel-jobs-group + .funnel-jobs-group {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.funnel-jobs-group h4 {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .funnel-job-item {
@@ -463,37 +481,40 @@ a {
 }
 
 .sankey-node rect {
-  stroke: var(--line);
+  stroke: none;
 }
 
-.sankey-node.root rect,
+.sankey-node.root rect {
+  fill: #9d948f;
+}
+
 .sankey-node.stage rect {
-  fill: #eff6ff;
+  fill: #3d8ec9;
 }
 
 .sankey-node.active rect {
-  fill: #ecfdf5;
+  fill: #4aa96c;
 }
 
 .sankey-node.stale rect {
-  fill: #fff7d6;
+  fill: #e5a34b;
 }
 
 .sankey-node.offer rect {
-  fill: #d1fae5;
+  fill: #d5ad28;
 }
 
 .sankey-node.rejected rect {
-  fill: #fef2f2;
+  fill: #df5656;
 }
 
 .sankey-node text {
   font-size: 11px;
 }
 
-.sankey-node .node-count {
+.sankey-node .node-value {
   fill: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 
@@ -571,4 +592,125 @@ a {
   .main {
     padding: 14px;
   }
+}
+
+/* ── Save feedback toast ─────────────────────────────── */
+.toast-host {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  max-width: min(360px, calc(100vw - 40px));
+  border-radius: 8px;
+  padding: 9px 14px;
+  background: var(--text);
+  color: #fff;
+  font-size: 13px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.toast-error {
+  background: var(--danger);
+}
+
+.toast.is-leaving {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+/* ── Deadline urgency ────────────────────────────────── */
+.inline-deadline-control.is-due-soon {
+  border-color: var(--warning);
+}
+
+.inline-deadline-control.is-due-soon .deadline-date-trigger {
+  color: var(--warning);
+}
+
+.inline-deadline-control.is-overdue {
+  border-color: var(--danger);
+}
+
+.inline-deadline-control.is-overdue .deadline-date-trigger {
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+/* ── Action needed overflow link ─────────────────────── */
+.action-needed-more {
+  margin-top: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--accent-dark);
+  font-weight: 600;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+/* ── Applications filter / sort switches ─────────────── */
+.controls {
+  flex-wrap: wrap;
+}
+
+.controls input {
+  flex: 1 1 260px;
+}
+
+.table-switches {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.segmented button {
+  min-height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 14px;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.segmented button:hover {
+  color: var(--text);
+}
+
+.segmented button.is-selected {
+  background: var(--panel);
+  color: var(--accent-dark);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 14%);
+}
+
+.segmented-label {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+/* Date picker floats above the table (positioned in JS) so it never gets clipped. */
+.deadline-calendar-popover {
+  z-index: 900;
 }
