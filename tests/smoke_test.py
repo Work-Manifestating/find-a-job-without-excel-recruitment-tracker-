@@ -78,6 +78,13 @@ def main() -> None:
             assert updated["next_action"] == "PREPARE"
 
             updated = request(base, "PATCH", f"/api/jobs/{job['id']}", {
+                "status": "PRE_INTERVIEW_COMPLETED",
+            })
+            assert updated["current_stage"] == "ASSESSMENT"
+            assert updated["status"] == "PRE_INTERVIEW_COMPLETED"
+            assert updated["next_action"] == "PRE_INTERVIEW_DONE_WAIT"
+
+            updated = request(base, "PATCH", f"/api/jobs/{job['id']}", {
                 "next_action": "ARCHIVE",
                 "company_category": "PEVC",
                 "notes": "Updated tracker note",
